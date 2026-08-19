@@ -1,12 +1,15 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { cores, tamanhos } from "../theme/colors";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
+import { cores } from "../theme/colors";
+import { Texto } from "../components/Texto"
 
 const Logo = require("../assets/img/Icone Branco.png");
-const Grupo = require("../assets/img/GrupoEyeVision.png");
+const Pietro = require("../assets/img/Pietro.png");
+const Nicoli = require("../assets/img/Nicoli.png");
+const Matheus = require("../assets/img/Matheus.png");
+const Samara = require("../assets/img/Samara.png");
 
 export default function Sobre() {
 
@@ -25,34 +28,34 @@ export default function Sobre() {
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={estilos.titulo}>Sobre</Text>
+                    <Texto style={estilos.titulo}>Sobre</Texto>
 
                     <View style={estilos.logoContainer}>
                         <Image source={Logo} style={estilos.logo} resizeMode="contain" />
-                        <Text style={estilos.nomeApp}>EyeVision</Text>
+                        <Texto style={estilos.nomeApp}>EyeVision</Texto>
                     </View>
 
                     <View style={estilos.card}>
-                        <Text style={estilos.resumo}>
+                        <Texto style={estilos.resumo}>
                             O EyeVision é uma tecnologia assistiva desenvolvida para
                             auxiliar pessoas com deficiência visual por meio de visão
                             computacional, sensores inteligentes e feedback em áudio,
                             promovendo maior autonomia e acessibilidade.
-                        </Text>
+                        </Texto>
                     </View>
 
-                    <Text style={estilos.subtitulo}>Objetivo</Text>
+                    <Texto style={estilos.subtitulo}>Objetivo</Texto>
 
                     <View style={estilos.card}>
-                        <Text style={estilos.textoCard}>
+                        <Texto style={estilos.textoCard}>
                             Democratizar a acessibilidade para pessoas com deficiência
                             visual por meio de um dispositivo que se acopla a um óculos
                             e com suas funções, auxilie essas pessoas na sua vida
                             cotidiana.
-                        </Text>
+                        </Texto>
                     </View>
 
-                    <Text style={estilos.subtitulo}>Tecnologias</Text>
+                    <Texto style={estilos.subtitulo}>Tecnologias</Texto>
 
                     <View style={estilos.card}>
                         {["React Native", "ESP32-S3 Sense", "Bluetooth", "OCR", "Síntese de voz"].map(
@@ -64,33 +67,63 @@ export default function Sobre() {
                                         indice !== lista.length - 1 && estilos.itemListaBorda,
                                     ]}
                                 >
-                                    <Text style={estilos.textoCard}>{tec}</Text>
+                                    <Texto style={estilos.textoCard}>{tec}</Texto>
                                 </View>
                             )
                         )}
                     </View>
 
-                    <Text style={estilos.subtitulo}>Equipe</Text>
+                    <Texto style={estilos.subtitulo}>Equipe</Texto>
 
                     <View style={estilos.integrantes}>
-                        <Image source={Grupo} style={estilos.grupoImg} resizeMode="cover" />
 
-                        <View style={estilos.listaIntegrantes}>
-                            {[
-                                "Pietro Davi Almeida Merique",
-                                "Nicoli Barboza da Silva",
-                                "Matheus de Sousa Oliveira",
-                                "Samara Pereira da Silva",
-                            ].map((nome) => (
-                                <View key={nome} style={estilos.integranteItem}>
-                                    <Text style={estilos.marcador}>•</Text>
-                                    <Text style={estilos.textoCard}>{nome}</Text>
-                                </View>
-                            ))}
+                        <View style={estilos.integranteItem}>
+                            <Image
+                                source={Pietro}
+                                style={estilos.fotoIntegrante}
+                            />
+
+                            <Texto style={estilos.nomeIntegrante}>
+                                Pietro Davi Almeida Merique
+                            </Texto>
                         </View>
+
+                        <View style={estilos.integranteItem}>
+                            <Image
+                                source={Nicoli}
+                                style={estilos.fotoIntegrante}
+                            />
+
+                            <Texto style={estilos.nomeIntegrante}>
+                                Nicoli Barboza da Silva
+                            </Texto>
+                        </View>
+
+                        <View style={estilos.integranteItem}>
+                            <Image
+                                source={Matheus}
+                                style={estilos.fotoIntegrante}
+                            />
+
+                            <Texto style={estilos.nomeIntegrante}>
+                                Matheus de Sousa Oliveira
+                            </Texto>
+                        </View>
+
+                        <View style={estilos.integranteItem}>
+                            <Image
+                                source={Samara}
+                                style={estilos.fotoIntegrante}
+                            />
+
+                            <Texto style={estilos.nomeIntegrante}>
+                                Samara Pereira da Silva
+                            </Texto>
+                        </View>
+
                     </View>
 
-                    <Text style={estilos.versao}>EyeVision v1.0 MVP</Text>
+                    <Texto style={estilos.versao}>EyeVision v1.0 MVP</Texto>
                 </View>
             </ScrollView>
         </SafeAreaProvider>
@@ -131,7 +164,7 @@ const estilos = StyleSheet.create({
         marginTop: 8,
     },
     resumo: {
-        textAlign: "center",
+        textAlign: "left",
         lineHeight: 25,
         color: cores.primariaClara,
     },
@@ -157,25 +190,28 @@ const estilos = StyleSheet.create({
         borderBottomColor: cores.divisoria,
     },
     integrantes: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 32,
         backgroundColor: cores.primariaBase,
         borderRadius: 20,
-        padding: 24,
-    },
-    grupoImg: {
-        height: 200,
-        width: 120,
-        borderRadius: 20,
-    },
-    listaIntegrantes: {
-        flex: 1,
+        padding: 20,
         gap: 16,
     },
+
     integranteItem: {
         flexDirection: "row",
-        gap: 6,
+        alignItems: "center",
+    },
+
+    fotoIntegrante: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        marginRight: 16,
+    },
+
+    nomeIntegrante: {
+        flex: 1,
+        color: cores.primariaClara,
+        fontSize: 16,
     },
     marcador: {
         color: cores.primariaClara,

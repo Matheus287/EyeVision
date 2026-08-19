@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Switch } from "../components/Switch";
 import { cores, tamanhos } from "../theme/colors";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Texto } from "../components/Texto"
 
 export default function Configuracoes() {
 
@@ -12,6 +13,23 @@ export default function Configuracoes() {
     const [modoLeitura, setModoLeitura] = useState(false);
     const [modoNavegacao, setModoNavegacao] = useState(false);
     const [economiaBateria, setEconomiaBateria] = useState(false);
+    const confirmarSaida = () => {
+    Alert.alert(
+        "Sair",
+        "Tem certeza que deseja sair?",
+        [
+            {
+                text: "Cancelar",
+                style: "cancel",
+            },
+            {
+                text: "Sair",
+                style: "destructive",
+                onPress: () => router.replace("/"),
+            },
+        ]
+    );
+};
 
     const router = useRouter();
 
@@ -22,79 +40,89 @@ export default function Configuracoes() {
                     <View style={estilos.cabecalho}>
                         <TouchableOpacity
                             style={estilos.botaoVoltar}
-                            onPress={() => router.push("/")}
+                            onPress={() => router.replace("/home")}
                         >
                             <Feather name="chevron-left" size={24} color={cores.primariaClara} />
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={estilos.titulo}>Configurações</Text>
+                    <Texto style={estilos.titulo}>Configurações</Texto>
 
-                    <Text style={estilos.subtitulo}>Dispositivo</Text>
+                    <Texto style={estilos.subtitulo}>Dispositivo</Texto>
 
                     <View style={estilos.card}>
                         <View style={estilos.item}>
-                            <Text style={estilos.itemTexto}>Alertas de obstáculos</Text>
+                            <Texto style={estilos.itemTexto}>Alertas de obstáculos</Texto>
                             <Switch ligado={alertasObstaculos} aoAlternar={() => setAlertasObstaculos(!alertasObstaculos)} />
                         </View>
 
                         <View style={estilos.item}>
-                            <Text style={estilos.itemTexto}>Modo Leitura</Text>
+                            <Texto style={estilos.itemTexto}>Modo Leitura</Texto>
                             <Switch ligado={modoLeitura} aoAlternar={() => setModoLeitura(!modoLeitura)} />
                         </View>
 
                         <View style={estilos.item}>
-                            <Text style={estilos.itemTexto}>Modo Navegação</Text>
+                            <Texto style={estilos.itemTexto}>Modo Navegação</Texto>
                             <Switch ligado={modoNavegacao} aoAlternar={() => setModoNavegacao(!modoNavegacao)} />
                         </View>
 
                         <View style={estilos.item}>
-                            <Text style={estilos.itemTexto}>Economia de Bateria</Text>
+                            <Texto style={estilos.itemTexto}>Economia de Bateria</Texto>
                             <Switch ligado={economiaBateria} aoAlternar={() => setEconomiaBateria(!economiaBateria)} />
                         </View>
 
                         <TouchableOpacity style={estilos.itemBotao}>
-                            <Text style={estilos.itemTexto}>Renomear</Text>
+                            <Texto style={estilos.itemTexto}>Renomear</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={[estilos.itemBotao, estilos.semBorda]}>
-                            <Text style={estilos.itemTexto}>Gerenciar Dispositivos</Text>
+                            <Texto style={estilos.itemTexto}>Gerenciar Dispositivos</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={estilos.subtitulo}>Sistema</Text>
+                    <Texto style={estilos.subtitulo}>Sistema</Texto>
 
                     <View style={estilos.card}>
                         <TouchableOpacity style={estilos.itemBotao}>
-                            <Text style={estilos.itemTexto}>Saída de áudio</Text>
+                            <Texto style={estilos.itemTexto}>Saída de áudio</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={estilos.itemBotao}>
-                            <Text style={estilos.itemTexto}>Velocidade da fala</Text>
+                            <Texto style={estilos.itemTexto}>Velocidade da fala</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={estilos.itemBotao}>
-                            <Text style={estilos.itemTexto}>Volume da reprodução</Text>
+                            <Texto style={estilos.itemTexto}>Volume da reprodução</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={estilos.itemBotao}>
-                            <Text style={estilos.itemTexto}>Idioma de leitura</Text>
+                            <Texto style={estilos.itemTexto}>Idioma de leitura</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={estilos.itemBotao} onPress={() => router.push("/sobre")}>
-                            <Text style={estilos.itemTexto}>Sobre</Text>
+                            <Texto style={estilos.itemTexto}>Sobre</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[estilos.itemBotao, estilos.semBorda]} onPress={() => router.push("/")}>
-                            <Text style={[estilos.itemTexto, estilos.sairTexto]}>Sair</Text>
-                            <Feather name="chevron-right" size={20} color={cores.primariaClara} />
+                        <TouchableOpacity
+                            style={[estilos.itemBotao, estilos.semBorda]}
+                            onPress={confirmarSaida}
+                        >
+                            <Texto style={[estilos.itemTexto, estilos.sairTexto]}>
+                                Sair
+                            </Texto>
+
+                            <Feather
+                                name="chevron-right"
+                                size={20}
+                                color={cores.primariaClara}
+                            />
                         </TouchableOpacity>
                     </View>
                 </View>
