@@ -3,6 +3,7 @@ import { cores } from "../theme/colors";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import { ConfiguracoesProvider } from "../contexto/ConfiguracoesContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +26,7 @@ export default function Layout() {
     }
 
     return (
+        <ConfiguracoesProvider>
         <Stack
             screenOptions={{
                 headerShown: false,
@@ -33,5 +35,6 @@ export default function Layout() {
                 },
             }}
         />
+        </ConfiguracoesProvider>
     );
 }

@@ -4,6 +4,8 @@ import { cores, tamanhos } from "../theme/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Texto } from "../components/Texto"
 
+import { LeitorTexto } from "../components/LeitorTexto";
+
 const logo = require("../assets/img/Icone Branco.png");
 
 export default function Inicial() {
@@ -51,6 +53,10 @@ export default function Inicial() {
                 </View>
 
             </View>
+            
+            <LeitorTexto
+    texto="Olá! Este é um teste do sistema de leitura do EyeVision."
+/>
 
         </SafeAreaView>
     );

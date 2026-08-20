@@ -6,13 +6,16 @@ import { Switch } from "../components/Switch";
 import { cores, tamanhos } from "../theme/colors";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Texto } from "../components/Texto"
+import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
 
 const Oculos = require("../assets/img/Oculos.png");
 
 export default function Home() {
 
-    const [modoNavegacao, setModoNavegacao] = useState(false);
-    const [economiaBateria, setEconomiaBateria] = useState(false);
+    const {
+        configuracoes,
+        alterarConfiguracao,
+    } = useConfiguracoes();
 
     const router = useRouter();
 
@@ -67,16 +70,26 @@ export default function Home() {
                     <View style={estilos.conteinerToggle}>
                         <Texto style={estilos.toggleTexto}>Modo Navegação</Texto>
                         <Switch
-                            ligado={modoNavegacao}
-                            aoAlternar={() => setModoNavegacao(!modoNavegacao)}
+                            ligado={configuracoes.modoNavegacao}
+                            aoAlternar={() =>
+                                alterarConfiguracao(
+                                    "modoNavegacao",
+                                    !configuracoes.modoNavegacao
+                                )
+                            }
                         />
                     </View>
 
                     <View style={estilos.conteinerToggle}>
                         <Texto style={estilos.toggleTexto}>Economia de Bateria</Texto>
                         <Switch
-                            ligado={economiaBateria}
-                            aoAlternar={() => setEconomiaBateria(!economiaBateria)}
+                            ligado={configuracoes.economiaBateria}
+                            aoAlternar={() =>
+                                alterarConfiguracao(
+                                    "economiaBateria",
+                                    !configuracoes.economiaBateria
+                                )
+                            }
                         />
                     </View>
                 </View>

@@ -6,13 +6,15 @@ import { Switch } from "../components/Switch";
 import { cores, tamanhos } from "../theme/colors";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Texto } from "../components/Texto"
+import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
 
 export default function Configuracoes() {
 
-    const [alertasObstaculos, setAlertasObstaculos] = useState(false);
-    const [modoLeitura, setModoLeitura] = useState(false);
-    const [modoNavegacao, setModoNavegacao] = useState(false);
-    const [economiaBateria, setEconomiaBateria] = useState(false);
+    const {
+        configuracoes,
+        alterarConfiguracao,
+    } = useConfiguracoes();
+
     const confirmarSaida = () => {
     Alert.alert(
         "Sair",
@@ -53,22 +55,22 @@ export default function Configuracoes() {
                     <View style={estilos.card}>
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Alertas de obstáculos</Texto>
-                            <Switch ligado={alertasObstaculos} aoAlternar={() => setAlertasObstaculos(!alertasObstaculos)} />
+                            <Switch ligado={configuracoes.alertasObstaculos} aoAlternar={() => alterarConfiguracao("alertasObstaculos", !configuracoes.alertasObstaculos)} />
                         </View>
 
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Modo Leitura</Texto>
-                            <Switch ligado={modoLeitura} aoAlternar={() => setModoLeitura(!modoLeitura)} />
+                            <Switch ligado={configuracoes.modoLeitura} aoAlternar={() => alterarConfiguracao("modoLeitura", !configuracoes.modoLeitura)} />
                         </View>
 
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Modo Navegação</Texto>
-                            <Switch ligado={modoNavegacao} aoAlternar={() => setModoNavegacao(!modoNavegacao)} />
+                            <Switch ligado={configuracoes.modoNavegacao} aoAlternar={() => alterarConfiguracao("modoNavegacao", !configuracoes.modoNavegacao)} />
                         </View>
 
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Economia de Bateria</Texto>
-                            <Switch ligado={economiaBateria} aoAlternar={() => setEconomiaBateria(!economiaBateria)} />
+                            <Switch ligado={configuracoes.economiaBateria} aoAlternar={() => alterarConfiguracao("economiaBateria", !configuracoes.economiaBateria)} />
                         </View>
 
                         <TouchableOpacity style={estilos.itemBotao}>
@@ -90,19 +92,63 @@ export default function Configuracoes() {
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={estilos.itemBotao}>
-                            <Texto style={estilos.itemTexto}>Velocidade da fala</Texto>
-                            <Feather name="chevron-right" size={20} color={cores.primariaClara} />
+                        <TouchableOpacity
+                            style={estilos.itemBotao}
+                            onPress={() => router.push("/velocidade-fala")}
+                        >
+                            <View>
+                                <Texto style={estilos.itemTexto}>
+                                    Velocidade da fala
+                                </Texto>
+
+                                <Texto style={estilos.valorConfiguracao}>
+                                    {configuracoes.velocidadeFala}x
+                                </Texto>
+                            </View>
+
+                            <Feather
+                                name="chevron-right"
+                                size={20}
+                                color={cores.primariaClara}
+                            />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={estilos.itemBotao}>
-                            <Texto style={estilos.itemTexto}>Volume da reprodução</Texto>
-                            <Feather name="chevron-right" size={20} color={cores.primariaClara} />
+                        <TouchableOpacity
+                            style={estilos.itemBotao}
+                            onPress={() => router.push("/volume")}
+                        >
+                            <View>
+                                <Texto style={estilos.itemTexto}>
+                                    Volume da reprodução
+                                </Texto>
+                            </View>
+
+                            <Feather
+                                name="chevron-right"
+                                size={20}
+                                color={cores.primariaClara}
+                            />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={estilos.itemBotao}>
-                            <Texto style={estilos.itemTexto}>Idioma de leitura</Texto>
-                            <Feather name="chevron-right" size={20} color={cores.primariaClara} />
+                        <TouchableOpacity
+                            style={estilos.itemBotao}
+                            onPress={() => router.push("/idioma-leitura")}
+                        >
+                            <View>
+                                <Texto style={estilos.itemTexto}>
+                                    Idioma de leitura
+                                </Texto>
+
+                                <Texto style={estilos.valorConfiguracao}>
+                                    {configuracoes.idiomaLeitura}
+                                </Texto>
+                            </View>
+
+                            <Feather
+                                name="chevron-right"
+                                size={20}
+                                color={cores.primariaClara}
+                            />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={estilos.itemBotao} onPress={() => router.push("/sobre")}>
@@ -194,4 +240,10 @@ const estilos = StyleSheet.create({
     sairTexto: {
         color: cores.aviso,
     },
+    valorConfiguracao: {
+    color: cores.primariaClara,
+    opacity: 0.55,
+    fontSize: 14,
+    marginTop: 2,
+},
 });
