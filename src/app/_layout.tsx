@@ -4,6 +4,7 @@ import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { ConfiguracoesProvider } from "../contexto/ConfiguracoesContext";
+import { BluetoothProvider } from "../contexto/bluetoothContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,6 +27,7 @@ export default function Layout() {
     }
 
     return (
+        <BluetoothProvider>
         <ConfiguracoesProvider>
         <Stack
             screenOptions={{
@@ -36,5 +38,6 @@ export default function Layout() {
             }}
         />
         </ConfiguracoesProvider>
+        </BluetoothProvider>
     );
 }

@@ -1,8 +1,8 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { cores, tamanhos } from "../theme/colors";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Texto } from "../components/Texto"
+import { Texto } from "../components/Texto";
+import { cores, tamanhos } from "../theme/colors";
 
 import { LeitorTexto } from "../components/LeitorTexto";
 
@@ -53,10 +53,6 @@ export default function Inicial() {
                 </View>
 
             </View>
-            
-            <LeitorTexto
-    texto="Olá! Este é um teste do sistema de leitura do EyeVision."
-/>
 
         </SafeAreaView>
     );

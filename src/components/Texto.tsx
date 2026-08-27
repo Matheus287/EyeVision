@@ -5,7 +5,7 @@ export function Texto(props: TextProps) {
         <Text
             {...props}
             style={[
-                { fontFamily: "Nunito" },
+                { fontFamily: "Nunito", color:"#FFF" },
                 props.style
             ]}
         />
