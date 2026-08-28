@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { cores } from "../theme/colors";
@@ -21,108 +21,105 @@ export default function AdicionarDispositivo() {
     } = useBluetooth();
 
     useEffect(() => {
-        // só dispara uma nova busca se ainda não tiver nada em mãos —
-        // assim voltar pra essa tela não some com a lista à toa
-        if (dispositivosEncontrados.length === 0 && !buscando) {
             procurarDispositivos();
-        }
     }, []);
 
-    // esconde da lista de "disponíveis" o que já está conectado
     const dispositivosDisponiveis = dispositivosEncontrados.filter(
         (device) => device.id !== dispositivoConectado?.id
     );
 
     return (
-        <View style={estilos.container}>
-            <View style={estilos.cabecalho}>
-                <TouchableOpacity
-                    style={estilos.botaoVoltar}
-                    onPress={() => router.replace("/home")}
-                >
-                    <Feather name="chevron-left" size={28} color={cores.primariaClara} />
-                </TouchableOpacity>
-            </View>
-
-            <Texto style={estilos.titulo}>Adicionar Dispositivos</Texto>
-
-            <Texto style={estilos.subtitulo}>Dispositivo conectado</Texto>
-
-            <View style={estilos.card}>
-                {dispositivoConectado ? (
-                    <TouchableOpacity style={estilos.item} onPress={desconectarDispositivo}>
-                        <View>
-                            <Texto style={estilos.itemTexto}>
-                                {dispositivoConectado.name ?? "Dispositivo sem nome"}
-                            </Texto>
-                            <Texto style={estilos.itemSubtexto}>Toque para desconectar</Texto>
-                        </View>
-
-                        <Feather name="check-circle" size={19} color={cores.terciaria} />
+        <ScrollView>
+            <View style={estilos.container}>
+                <View style={estilos.cabecalho}>
+                    <TouchableOpacity
+                        style={estilos.botaoVoltar}
+                        onPress={() => router.replace("/home")}
+                    >
+                        <Feather name="chevron-left" size={28} color={cores.primariaClara} />
                     </TouchableOpacity>
-                ) : (
-                    <View style={estilos.item}>
-                        <Texto style={estilos.itemTexto}>Nenhum dispositivo conectado</Texto>
-                    </View>
-                )}
-            </View>
+                </View>
 
-            <View style={estilos.linhaSubtitulo}>
-                <Texto style={estilos.subtituloSemMargem}>Dispositivos disponíveis</Texto>
+                <Texto style={estilos.titulo}>Adicionar Dispositivos</Texto>
 
-                <TouchableOpacity
-                    onPress={procurarDispositivos}
-                    disabled={buscando}
-                    hitSlop={8}
-                >
-                    {buscando ? (
-                        <ActivityIndicator size="small" color={cores.primariaClara} />
-                    ) : (
-                        <Feather name="refresh-cw" size={18} color={cores.primariaClara} />
-                    )}
-                </TouchableOpacity>
-            </View>
+                <Texto style={estilos.subtitulo}>Dispositivo conectado</Texto>
 
-            <View style={estilos.card}>
-                {dispositivosDisponiveis.length === 0 ? (
-                    <View style={estilos.item}>
-                        <Texto style={estilos.itemTexto}>
-                            {buscando
-                                ? "Procurando por dispositivos..."
-                                : "Nenhum dispositivo encontrado"}
-                        </Texto>
-                    </View>
-                ) : (
-                    dispositivosDisponiveis.map((device) => (
-                        <TouchableOpacity
-                            key={device.id}
-                            style={estilos.item}
-                            onPress={() => conectarDispositivo(device)}
-                            disabled={conectandoId !== null}
-                        >
-                            <Texto style={estilos.itemTexto}>
-                                {device.name ?? "Dispositivo sem nome"}
-                            </Texto>
+                <View style={estilos.card}>
+                    {dispositivoConectado ? (
+                        <TouchableOpacity style={estilos.item} onPress={desconectarDispositivo}>
+                            <View>
+                                <Texto style={estilos.itemTexto}>
+                                    {dispositivoConectado.name ?? "Dispositivo sem nome"}
+                                </Texto>
+                                <Texto style={estilos.itemSubtexto}>Toque para desconectar</Texto>
+                            </View>
 
-                            {conectandoId === device.id ? (
-                                <ActivityIndicator size="small" color={cores.primariaClara} />
-                            ) : (
-                                <Feather
-                                    name="chevron-right"
-                                    size={19}
-                                    color={cores.primariaClara}
-                                />
-                            )}
+                            <Feather name="check-circle" size={19} color={cores.terciaria} />
                         </TouchableOpacity>
-                    ))
-                )}
-            </View>
+                    ) : (
+                        <View style={estilos.item}>
+                            <Texto style={estilos.itemTexto}>Nenhum dispositivo conectado</Texto>
+                        </View>
+                    )}
+                </View>
 
-            <Texto style={estilos.aviso}>
-                Verifique se o dispositivo que você deseja conectar está ligado e
-                no modo pareamento e se seu celular está com o bluetooth ligado.
-            </Texto>
-        </View>
+                <View style={estilos.linhaSubtitulo}>
+                    <Texto style={estilos.subtituloSemMargem}>Dispositivos disponíveis</Texto>
+
+                    <TouchableOpacity
+                        onPress={procurarDispositivos}
+                        disabled={buscando}
+                        hitSlop={8}
+                    >
+                        {buscando ? (
+                            <ActivityIndicator size="small" color={cores.primariaClara} />
+                        ) : (
+                            <Feather name="refresh-cw" size={18} color={cores.primariaClara} />
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                <View style={estilos.card}>
+                    {dispositivosDisponiveis.length === 0 ? (
+                        <View style={estilos.item}>
+                            <Texto style={estilos.itemTexto}>
+                                {buscando
+                                    ? "Procurando por dispositivos..."
+                                    : "Nenhum dispositivo encontrado"}
+                            </Texto>
+                        </View>
+                    ) : (
+                        dispositivosDisponiveis.map((device) => (
+                            <TouchableOpacity
+                                key={device.id}
+                                style={estilos.item}
+                                onPress={() => conectarDispositivo(device)}
+                                disabled={conectandoId !== null}
+                            >
+                                <Texto style={estilos.itemTexto}>
+                                    {device.name ?? "Dispositivo sem nome"}
+                                </Texto>
+
+                                {conectandoId === device.id ? (
+                                    <ActivityIndicator size="small" color={cores.primariaClara} />
+                                ) : (
+                                    <Feather
+                                        name="chevron-right"
+                                        size={19}
+                                        color={cores.primariaClara}
+                                    />
+                                )}
+                            </TouchableOpacity>
+                        ))
+                    )}
+                </View>
+
+                <Texto style={estilos.aviso}>
+                    Verifique se o dispositivo que você deseja conectar está ligado e
+                    no modo pareamento e se seu celular está com o bluetooth ligado.
+                </Texto>
+            </View>
+        </ScrollView>
     );
 }
 
