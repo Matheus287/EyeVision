@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Switch } from "../components/Switch";
@@ -65,6 +65,13 @@ export default function Home() {
                         onPress={() => router.push("/historico")}
                     >
                         <Texto style={estilos.submitButtonTexto}>Histórico</Texto>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={estilos.submitButton}
+                        onPress={() => router.push("/teste-ia")}
+                    >
+                        <Texto style={estilos.submitButtonTexto}>Testar IA</Texto>
                     </TouchableOpacity>
 
                     <View style={estilos.conteinerToggle}>

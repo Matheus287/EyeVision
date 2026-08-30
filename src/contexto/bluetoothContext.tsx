@@ -1,25 +1,42 @@
 import { createContext, ReactNode, useContext, useEffect, useRef,useState } from "react";
 import { PermissionsAndroid, Platform } from "react-native";
 import { BleManager, Device, Characteristic } from "react-native-ble-plx";
-import { UUIDS, COMANDOS, textoParaBase64 } from "../servicos/bluetoothProtocol";
+import { UUIDS, COMANDOS, textoParaBase64, TIPOS_FRAGMENTO, TAMANHO_CABECALHO } from "../servicos/bluetoothProtocol";
+import { toByteArray } from "base64-js";
+import { processarCaptura } from "../servicos/iaService";
 
 const DURACAO_BUSCA_MS = 10000;
+
+interface TarefaRecebida {
+    id: number;
+    imagem: string | null;
+    audio: string | null;
+}
 
 interface BluetoothContextType {
     dispositivosEncontrados: Device[];
     buscando: boolean;
     dispositivoConectado: Device | null;
     conectandoId: string | null;
-    
+
     caracteristicaControle: Characteristic | null;
     caracteristicaImagem: Characteristic | null;
     caracteristicaAudio: Characteristic | null;
     caracteristicaStatus: Characteristic | null;
 
+    imagemRecebida: string | null;
+    audioRecebido: string | null;
+
+    recebendoImagem: boolean;
+    recebendoAudio: boolean;
+
+    tarefaRecebida: TarefaRecebida | null;
+
     procurarDispositivos: () => Promise<void>;
     conectarDispositivo: (device: Device) => Promise<void>;
     desconectarDispositivo: () => Promise<void>;
     capturarImagem: () => Promise<void>;
+    analisarCaptura: () => Promise<void>;
 }
 
 const BluetoothContext = createContext<BluetoothContextType | null>(null);
@@ -45,6 +62,36 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     const [caracteristicaStatus, setCaracteristicaStatus] =
         useState<Characteristic | null>(null);
 
+    const [imagemRecebida, setImagemRecebida] =
+    useState<string | null>(null);
+
+    const [audioRecebido, setAudioRecebido] =
+        useState<string | null>(null);
+
+    const [recebendoImagem, setRecebendoImagem] =
+        useState(false);
+
+    const [recebendoAudio, setRecebendoAudio] =
+        useState(false);
+
+    const imagemBufferRef = useRef<Map<number, Uint8Array>>(new Map());
+    const audioBufferRef = useRef<Map<number, Uint8Array>>(new Map());
+    const imagemSubscriptionRef = useRef<{
+        remove: () => void;
+    } | null>(null);
+
+    const imagemTarefaRef = useRef<number | null>(null);
+    const audioTarefaRef = useRef<number | null>(null);
+
+    const audioSubscriptionRef = useRef<{
+        remove: () => void;
+    } | null>(null);
+
+    const [tarefaRecebida, setTarefaRecebida] =
+    useState<TarefaRecebida | null>(null);
+
+    const ultimaTarefaProcessadaRef = useRef<number | null>(null);
+
     useEffect(() => {
         const manager = managerRef.current;
 
@@ -53,6 +100,102 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
             manager.destroy();
         };
     }, []);
+
+    useEffect(() => {
+
+        if (!imagemRecebida || !audioRecebido) {
+            return;
+        }
+
+        if (
+            imagemTarefaRef.current === null ||
+            audioTarefaRef.current === null
+        ) {
+            return;
+        }
+
+        if (
+            imagemTarefaRef.current !==
+            audioTarefaRef.current
+        ) {
+            return;
+        }
+
+        const tarefa: TarefaRecebida = {
+            id: imagemTarefaRef.current,
+            imagem: imagemRecebida,
+            audio: audioRecebido
+        };
+
+        setTarefaRecebida(tarefa);
+
+        console.log(
+            "Tarefa completa recebida:",
+            tarefa.id
+        );
+
+    }, [imagemRecebida, audioRecebido]);
+
+    useEffect(() => {
+
+        if (!tarefaRecebida) {
+            return;
+        }
+
+        const tarefa = tarefaRecebida;
+
+        if (
+            ultimaTarefaProcessadaRef.current === tarefa.id
+        ) {
+            return;
+        }
+
+        ultimaTarefaProcessadaRef.current = tarefa.id;
+
+        async function processarTarefa() {
+
+            console.log(
+                "Iniciando análise automática da tarefa:",
+                tarefa.id
+            );
+
+            try {
+
+                const resultado = await processarCaptura(
+                    tarefa.imagem,
+                    tarefa.audio,
+                    "image/jpeg",
+                    "audio/mpeg"
+                );
+
+                if (resultado.sucesso) {
+
+                    console.log(
+                        "Resposta do Gemini:",
+                        resultado.resposta
+                    );
+
+                } else {
+
+                    console.log(
+                        "Erro na análise:",
+                        resultado.erro
+                    );
+                }
+
+            } catch (erro) {
+
+                console.error(
+                    "Erro ao processar tarefa:",
+                    erro
+                );
+            }
+        }
+
+        processarTarefa();
+
+    }, [tarefaRecebida]);
+
 
     async function pedirPermissoes() {
         if (Platform.OS !== "android") return true;
@@ -200,6 +343,16 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
             setDispositivoConectado(conectado);
 
+            iniciarRecebimentoImagem(
+                conectado,
+                imagem
+            );
+
+            iniciarRecebimentoAudio(
+                conectado,
+                audio
+            );
+
             managerRef.current.onDeviceDisconnected(
                 conectado.id,
                 () => {
@@ -211,6 +364,21 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                             setCaracteristicaImagem(null);
                             setCaracteristicaAudio(null);
                             setCaracteristicaStatus(null);
+
+                            imagemSubscriptionRef.current?.remove();
+                            imagemSubscriptionRef.current = null;
+
+                            audioSubscriptionRef.current?.remove();
+                            audioSubscriptionRef.current = null;
+
+                            imagemBufferRef.current.clear();
+                            audioBufferRef.current.clear();
+
+                            setImagemRecebida(null);
+                            setAudioRecebido(null);
+                            setRecebendoImagem(false);
+                            setRecebendoAudio(false);
+                            setTarefaRecebida(null);
 
                             return null;
                         }
@@ -262,19 +430,42 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
 
     async function desconectarDispositivo() {
+
         if (!dispositivoConectado) return;
 
         try {
+
+            imagemSubscriptionRef.current?.remove();
+            imagemSubscriptionRef.current = null;
+
+            audioSubscriptionRef.current?.remove();
+            audioSubscriptionRef.current = null;
+
             await dispositivoConectado.cancelConnection();
+
             setDispositivoConectado(null);
+
             setCaracteristicaControle(null);
             setCaracteristicaImagem(null);
             setCaracteristicaAudio(null);
             setCaracteristicaStatus(null);
 
-            console.log("Dispositivo desconectado com sucesso.");
+            setImagemRecebida(null);
+            setAudioRecebido(null);
+            setTarefaRecebida(null);
+
+            imagemBufferRef.current.clear();
+            audioBufferRef.current.clear();
+
+            console.log(
+                "Dispositivo desconectado com sucesso."
+            );
+
         } catch (erro) {
-            console.log("Erro ao desconectar:", erro);
+            console.log(
+                "Erro ao desconectar:",
+                erro
+            );
         }
     }
 
@@ -302,6 +493,331 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         }
     }
 
+    function reconstruirDados(
+        buffer: Map<number, Uint8Array>,
+        total: number
+    ): Uint8Array | null {
+
+        if (buffer.size !== total) {
+            return null;
+        }
+
+        for (let i = 0; i < total; i++) {
+            if (!buffer.has(i)) {
+                return null;
+            }
+        }
+
+        let tamanhoTotal = 0;
+
+        for (const dados of buffer.values()) {
+            tamanhoTotal += dados.length;
+        }
+
+        const resultado = new Uint8Array(tamanhoTotal);
+
+        let posicao = 0;
+
+        for (let i = 0; i < total; i++) {
+            const dados = buffer.get(i)!;
+
+            resultado.set(dados, posicao);
+
+            posicao += dados.length;
+        }
+
+        return resultado;
+    }
+
+    function bytesParaBase64(bytes: Uint8Array): string {
+
+        let binario = "";
+
+        const tamanhoBloco = 0x8000;
+
+        for (let i = 0; i < bytes.length; i += tamanhoBloco) {
+
+            const bloco = bytes.subarray(
+                i,
+                Math.min(i + tamanhoBloco, bytes.length)
+            );
+
+            binario += String.fromCharCode(...bloco);
+        }
+
+        return btoa(binario);
+    }
+
+    function iniciarRecebimentoImagem(
+        device: Device,
+        characteristic: Characteristic
+    ) {
+        setRecebendoImagem(true);
+        imagemBufferRef.current.clear();
+
+        console.log("Monitorando IMAGEM...");
+
+        imagemSubscriptionRef.current =
+        device.monitorCharacteristicForService(
+            UUIDS.SERVICO_EYEVISION,
+            characteristic.uuid,
+            (erro, characteristicAtualizada) => {
+
+                if (erro) {
+                    console.log("ERRO AO RECEBER IMAGEM:", erro);
+                    setRecebendoImagem(false);
+                    return;
+                }
+
+                if (!characteristicAtualizada?.value) {
+                    return;
+                }
+
+                try {
+                    const bytes = toByteArray(
+                        characteristicAtualizada.value
+                    );
+
+                    if (bytes.length < TAMANHO_CABECALHO) {
+                        console.log("Fragmento de imagem inválido.");
+                        return;
+                    }
+
+                    const tipo = bytes[0];
+
+                    const tarefa =
+                        bytes[1] |
+                        (bytes[2] << 8);
+
+                    const sequencia =
+                        bytes[3] |
+                        (bytes[4] << 8);
+
+                    const total =
+                        bytes[5] |
+                        (bytes[6] << 8);
+
+                    const dados = bytes.slice(7);
+
+                    if (tipo !== TIPOS_FRAGMENTO.IMAGEM) {
+                        console.log("Tipo de fragmento inesperado:", tipo);
+                        return;
+                    }
+                    
+                    if (imagemTarefaRef.current === null) {
+                        imagemTarefaRef.current = tarefa;
+                    }
+
+                    if (imagemTarefaRef.current !== tarefa) {
+                        console.log(
+                            "Fragmento pertence a outra tarefa."
+                        );
+                        return;
+                    }
+
+                    imagemBufferRef.current.set(
+                        sequencia,
+                        dados
+                    );
+
+                    console.log(
+                        `Imagem: ${sequencia + 1}/${total}`
+                    );
+
+                    if (imagemBufferRef.current.size === total) {
+
+                        const imagem = reconstruirDados(
+                            imagemBufferRef.current,
+                            total
+                        );
+
+                        if (!imagem) {
+                            console.log(
+                                "Não foi possível reconstruir a imagem."
+                            );
+                            setRecebendoImagem(false);
+                            return;
+                        }
+
+                        const base64 = bytesParaBase64(imagem);
+
+                        setImagemRecebida(base64);
+                        setRecebendoImagem(false);
+
+                        imagemBufferRef.current.clear();
+
+                        console.log(
+                            "Imagem recebida e reconstruída!"
+                        );
+                    }
+
+                } catch (erro) {
+                    console.log(
+                        "ERRO AO PROCESSAR IMAGEM:",
+                        erro
+                    );
+
+                    setRecebendoImagem(false);
+                }
+            }
+        );
+    }
+
+    function iniciarRecebimentoAudio(
+        device: Device,
+        characteristic: Characteristic
+    ) {
+        setRecebendoAudio(true);
+        audioBufferRef.current.clear();
+
+        console.log("Monitorando AUDIO...");
+
+        audioSubscriptionRef.current =
+        device.monitorCharacteristicForService(
+            UUIDS.SERVICO_EYEVISION,
+            characteristic.uuid,
+            (erro, characteristicAtualizada) => {
+
+                if (erro) {
+                    console.log("ERRO AO RECEBER ÁUDIO:", erro);
+                    setRecebendoAudio(false);
+                    return;
+                }
+
+                if (!characteristicAtualizada?.value) {
+                    return;
+                }
+
+                try {
+                    const bytes = toByteArray(
+                        characteristicAtualizada.value
+                    );
+
+                    if (bytes.length < TAMANHO_CABECALHO) {
+                        console.log("Fragmento de áudio inválido.");
+                        return;
+                    }
+
+                    const tipo = bytes[0];
+
+                    const tarefa =
+                        bytes[1] |
+                        (bytes[2] << 8);
+
+                    const sequencia =
+                        bytes[3] |
+                        (bytes[4] << 8);
+
+                    const total =
+                        bytes[5] |
+                        (bytes[6] << 8);
+
+                    const dados = bytes.slice(7);
+
+                    if (tipo !== TIPOS_FRAGMENTO.AUDIO) {
+                        console.log(
+                            "Tipo de fragmento inesperado:",
+                            tipo
+                        );
+                        return;
+                    }
+
+                    if (audioTarefaRef.current === null) {
+                        audioTarefaRef.current = tarefa;
+                    }
+
+                    if (audioTarefaRef.current !== tarefa) {
+                        console.log(
+                            "Fragmento pertence a outra tarefa."
+                        );
+                        return;
+                    }
+
+                    audioBufferRef.current.set(
+                        sequencia,
+                        dados
+                    );
+
+                    console.log(
+                        `Áudio: ${sequencia + 1}/${total}`
+                    );
+
+                    if (audioBufferRef.current.size === total) {
+
+                        const audio = reconstruirDados(
+                            audioBufferRef.current,
+                            total
+                        );
+
+                        if (!audio) {
+                            console.log(
+                                "Não foi possível reconstruir o áudio."
+                            );
+                            setRecebendoAudio(false);
+                            return;
+                        }
+
+                        const base64 = bytesParaBase64(audio);
+
+                        setAudioRecebido(base64);
+                        setRecebendoAudio(false);
+
+                        audioBufferRef.current.clear();
+
+                        console.log(
+                            "Áudio recebido e reconstruído!"
+                        );
+                    }
+
+                } catch (erro) {
+                    console.log(
+                        "ERRO AO PROCESSAR ÁUDIO:",
+                        erro
+                    );
+
+                    setRecebendoAudio(false);
+                }
+            }
+        );
+    }
+
+    async function analisarCaptura() {
+
+        if (!tarefaRecebida) {
+            console.log(
+                "Nenhuma tarefa disponível para análise."
+            );
+            return;
+        }
+
+        console.log(
+            "Enviando tarefa para o Gemini:",
+            tarefaRecebida.id
+        );
+
+        const resultado = await processarCaptura(
+            tarefaRecebida.imagem,
+            tarefaRecebida.audio,
+            "image/jpeg",
+            "audio/mpeg"
+        );
+
+        if (resultado.sucesso) {
+
+            console.log(
+                "Resposta do Gemini:",
+                resultado.resposta
+            );
+
+        } else {
+
+            console.log(
+                "Erro na análise:",
+                resultado.erro
+            );
+        }
+    }
+
     return (
         <BluetoothContext.Provider
             value={{
@@ -315,10 +831,17 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 caracteristicaAudio,
                 caracteristicaStatus,
 
+                imagemRecebida,
+                audioRecebido,
+                tarefaRecebida,
+                recebendoImagem,
+                recebendoAudio,
+
                 procurarDispositivos,
                 conectarDispositivo,
                 desconectarDispositivo,
                 capturarImagem,
+                analisarCaptura,
             }}
         >
             {children}

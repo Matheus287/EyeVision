@@ -34,7 +34,8 @@
           "imageWidth": 76
         }
       ],
-      "react-native-ble-plx"
+      "react-native-ble-plx",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
