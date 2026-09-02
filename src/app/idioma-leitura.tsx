@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { cores } from "../theme/colors";
 import { Texto } from "../components/Texto";
 import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
+import { anunciar, useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 const idiomas = [
     "Português (Brasil)",
@@ -20,6 +21,13 @@ export default function IdiomaLeitura() {
         alterarConfiguracao,
     } = useConfiguracoes();
 
+    useAnuncioDeTela("Idioma de leitura");
+
+    function selecionarIdioma(idioma: string) {
+        alterarConfiguracao("idiomaLeitura", idioma);
+        anunciar(`Idioma de leitura definido para ${idioma}`);
+    }
+
     return (
         <ScrollView
             style={estilos.container}
@@ -31,6 +39,8 @@ export default function IdiomaLeitura() {
                 <Pressable
                     style={estilos.botaoVoltar}
                     onPress={() => router.back()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Voltar"
                 >
                     <Feather
                         name="chevron-left"
@@ -41,11 +51,11 @@ export default function IdiomaLeitura() {
 
             </View>
 
-            <Texto style={estilos.titulo}>
+            <Texto style={estilos.titulo} accessibilityRole="header">
                 Idioma de leitura
             </Texto>
 
-            <View style={estilos.card}>
+            <View style={estilos.card} accessibilityRole="radiogroup">
 
                 {idiomas.map((idioma, indice) => {
 
@@ -60,12 +70,10 @@ export default function IdiomaLeitura() {
                                 indice !== idiomas.length - 1 &&
                                     estilos.itemBorda,
                             ]}
-                            onPress={() =>
-                                alterarConfiguracao(
-                                    "idiomaLeitura",
-                                    idioma
-                                )
-                            }
+                            onPress={() => selecionarIdioma(idioma)}
+                            accessibilityRole="radio"
+                            accessibilityLabel={idioma}
+                            accessibilityState={{ checked: selecionado }}
                         >
 
                             <Texto style={estilos.texto}>

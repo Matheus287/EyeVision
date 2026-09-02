@@ -5,9 +5,11 @@ import { cores } from "../theme/colors";
 interface SwitchProps {
     ligado: boolean;
     aoAlternar: () => void;
+    rotulo: string;
+    desabilitado?: boolean;
 }
 
-export function Switch({ ligado, aoAlternar }: SwitchProps) {
+export function Switch({ ligado, aoAlternar, rotulo, desabilitado }: SwitchProps) {
 
     const anim = useRef(new Animated.Value(ligado ? 1 : 0)).current;
 
@@ -30,7 +32,15 @@ export function Switch({ ligado, aoAlternar }: SwitchProps) {
     });
 
     return (
-        <Pressable onPress={aoAlternar} hitSlop={8}>
+        <Pressable
+            onPress={aoAlternar}
+            disabled={desabilitado}
+            hitSlop={8}
+            accessible
+            accessibilityRole="switch"
+            accessibilityLabel={rotulo}
+            accessibilityState={{ checked: ligado, disabled: !!desabilitado }}
+        >
             <Animated.View style={[estilos.toggleButton, { backgroundColor: corFundo }]}>
                 <Animated.View
                     style={[estilos.bolinha, { left: posicaoBolinha }]}

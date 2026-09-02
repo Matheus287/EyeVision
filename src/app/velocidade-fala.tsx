@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { cores } from "../theme/colors";
 import { Texto } from "../components/Texto";
 import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
+import { anunciar, useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 const velocidades = [
     0.5,
@@ -23,6 +24,13 @@ export default function VelocidadeFala() {
         alterarConfiguracao,
     } = useConfiguracoes();
 
+    useAnuncioDeTela("Velocidade da fala");
+
+    function selecionarVelocidade(velocidade: number) {
+        alterarConfiguracao("velocidadeFala", velocidade);
+        anunciar(`Velocidade da fala definida para ${velocidade}x`);
+    }
+
     return (
         <ScrollView
             style={estilos.container}
@@ -32,6 +40,8 @@ export default function VelocidadeFala() {
             <Pressable
                 style={estilos.botaoVoltar}
                 onPress={() => router.back()}
+                accessibilityRole="button"
+                accessibilityLabel="Voltar"
             >
                 <Feather
                     name="chevron-left"
@@ -40,11 +50,11 @@ export default function VelocidadeFala() {
                 />
             </Pressable>
 
-            <Texto style={estilos.titulo}>
+            <Texto style={estilos.titulo} accessibilityRole="header">
                 Velocidade da fala
             </Texto>
 
-            <View style={estilos.card}>
+            <View style={estilos.card} accessibilityRole="radiogroup">
 
                 {velocidades.map((velocidade, indice) => {
 
@@ -59,12 +69,10 @@ export default function VelocidadeFala() {
                                 indice !== velocidades.length - 1 &&
                                     estilos.itemBorda,
                             ]}
-                            onPress={() =>
-                                alterarConfiguracao(
-                                    "velocidadeFala",
-                                    velocidade
-                                )
-                            }
+                            onPress={() => selecionarVelocidade(velocidade)}
+                            accessibilityRole="radio"
+                            accessibilityLabel={`${velocidade}x`}
+                            accessibilityState={{ checked: selecionada }}
                         >
 
                             <Texto>

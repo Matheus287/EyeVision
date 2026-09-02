@@ -7,6 +7,7 @@ import { cores, tamanhos } from "../theme/colors";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Texto } from "../components/Texto"
 import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
+import { useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 export default function Configuracoes() {
 
@@ -14,6 +15,8 @@ export default function Configuracoes() {
         configuracoes,
         alterarConfiguracao,
     } = useConfiguracoes();
+
+    useAnuncioDeTela("Configurações");
 
     const confirmarSaida = () => {
     Alert.alert(
@@ -43,51 +46,87 @@ export default function Configuracoes() {
                         <TouchableOpacity
                             style={estilos.botaoVoltar}
                             onPress={() => router.replace("/home")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Voltar para tela inicial"
                         >
                             <Feather name="chevron-left" size={24} color={cores.primariaClara} />
                         </TouchableOpacity>
                     </View>
 
-                    <Texto style={estilos.titulo}>Configurações</Texto>
+                    <Texto style={estilos.titulo} accessibilityRole="header">
+                        Configurações
+                    </Texto>
 
-                    <Texto style={estilos.subtitulo}>Dispositivo</Texto>
+                    <Texto style={estilos.subtitulo} accessibilityRole="header">
+                        Dispositivo
+                    </Texto>
 
                     <View style={estilos.card}>
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Alertas de obstáculos</Texto>
-                            <Switch ligado={configuracoes.alertasObstaculos} aoAlternar={() => alterarConfiguracao("alertasObstaculos", !configuracoes.alertasObstaculos)} />
+                            <Switch
+                                rotulo="Alertas de obstáculos"
+                                ligado={configuracoes.alertasObstaculos}
+                                aoAlternar={() => alterarConfiguracao("alertasObstaculos", !configuracoes.alertasObstaculos)}
+                            />
                         </View>
 
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Modo Leitura</Texto>
-                            <Switch ligado={configuracoes.modoLeitura} aoAlternar={() => alterarConfiguracao("modoLeitura", !configuracoes.modoLeitura)} />
+                            <Switch
+                                rotulo="Modo Leitura"
+                                ligado={configuracoes.modoLeitura}
+                                aoAlternar={() => alterarConfiguracao("modoLeitura", !configuracoes.modoLeitura)}
+                            />
                         </View>
 
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Modo Navegação</Texto>
-                            <Switch ligado={configuracoes.modoNavegacao} aoAlternar={() => alterarConfiguracao("modoNavegacao", !configuracoes.modoNavegacao)} />
+                            <Switch
+                                rotulo="Modo Navegação"
+                                ligado={configuracoes.modoNavegacao}
+                                aoAlternar={() => alterarConfiguracao("modoNavegacao", !configuracoes.modoNavegacao)}
+                            />
                         </View>
 
                         <View style={estilos.item}>
                             <Texto style={estilos.itemTexto}>Economia de Bateria</Texto>
-                            <Switch ligado={configuracoes.economiaBateria} aoAlternar={() => alterarConfiguracao("economiaBateria", !configuracoes.economiaBateria)} />
+                            <Switch
+                                rotulo="Economia de Bateria"
+                                ligado={configuracoes.economiaBateria}
+                                aoAlternar={() => alterarConfiguracao("economiaBateria", !configuracoes.economiaBateria)}
+                            />
                         </View>
 
-                        <TouchableOpacity style={estilos.itemBotao}>
+                        <TouchableOpacity
+                            style={estilos.itemBotao}
+                            accessibilityRole="button"
+                            accessibilityLabel="Renomear"
+                        >
                             <Texto style={estilos.itemTexto}>Renomear</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[estilos.itemBotao, estilos.semBorda]}>
+                        <TouchableOpacity
+                            style={[estilos.itemBotao, estilos.semBorda]}
+                            accessibilityRole="button"
+                            accessibilityLabel="Gerenciar Dispositivos"
+                        >
                             <Texto style={estilos.itemTexto}>Gerenciar Dispositivos</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
                     </View>
 
-                    <Texto style={estilos.subtitulo}>Sistema</Texto>
+                    <Texto style={estilos.subtitulo} accessibilityRole="header">
+                        Sistema
+                    </Texto>
 
                     <View style={estilos.card}>
-                        <TouchableOpacity style={estilos.itemBotao}>
+                        <TouchableOpacity
+                            style={estilos.itemBotao}
+                            accessibilityRole="button"
+                            accessibilityLabel="Saída de áudio"
+                        >
                             <Texto style={estilos.itemTexto}>Saída de áudio</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
@@ -95,6 +134,9 @@ export default function Configuracoes() {
                         <TouchableOpacity
                             style={estilos.itemBotao}
                             onPress={() => router.push("/velocidade-fala")}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Velocidade da fala, ${configuracoes.velocidadeFala}x`}
+                            accessibilityHint="Toque para alterar"
                         >
                             <View>
                                 <Texto style={estilos.itemTexto}>
@@ -116,6 +158,9 @@ export default function Configuracoes() {
                         <TouchableOpacity
                             style={estilos.itemBotao}
                             onPress={() => router.push("/volume")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Volume da reprodução"
+                            accessibilityHint="Toque para alterar"
                         >
                             <View>
                                 <Texto style={estilos.itemTexto}>
@@ -133,6 +178,9 @@ export default function Configuracoes() {
                         <TouchableOpacity
                             style={estilos.itemBotao}
                             onPress={() => router.push("/idioma-leitura")}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Idioma de leitura, ${configuracoes.idiomaLeitura}`}
+                            accessibilityHint="Toque para alterar"
                         >
                             <View>
                                 <Texto style={estilos.itemTexto}>
@@ -151,7 +199,12 @@ export default function Configuracoes() {
                             />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={estilos.itemBotao} onPress={() => router.push("/sobre")}>
+                        <TouchableOpacity
+                            style={estilos.itemBotao}
+                            onPress={() => router.push("/sobre")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Sobre"
+                        >
                             <Texto style={estilos.itemTexto}>Sobre</Texto>
                             <Feather name="chevron-right" size={20} color={cores.primariaClara} />
                         </TouchableOpacity>
@@ -159,6 +212,9 @@ export default function Configuracoes() {
                         <TouchableOpacity
                             style={[estilos.itemBotao, estilos.semBorda]}
                             onPress={confirmarSaida}
+                            accessibilityRole="button"
+                            accessibilityLabel="Sair"
+                            accessibilityHint="Sai do app e volta para a tela inicial"
                         >
                             <Texto style={[estilos.itemTexto, estilos.sairTexto]}>
                                 Sair

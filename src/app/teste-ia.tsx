@@ -3,6 +3,8 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet, Alert, Image } fr
 import { falarResposta } from "../servicos/tts";
 import { analisarConteudo } from "../servicos/geminiService";
 import { arquivoParaBase64 } from "../servicos/arquivoParaBase64";
+import { Texto } from "../components/Texto"
+import { useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 const IMAGEM_TESTE = require("../assets/img/teste.jpg");
 const AUDIO_TESTE = require("../assets/audio/teste.mp3");
@@ -12,6 +14,7 @@ export default function TesteIA() {
     const [resposta, setResposta] = useState("");
     const [carregando, setCarregando] = useState(false);
 
+    useAnuncioDeTela("Teste de inteligência artificial");
 
     async function executarAnalise() {
 
@@ -70,14 +73,17 @@ export default function TesteIA() {
     return (
         <View style={styles.container}>
 
-            <Text style={styles.titulo}>
+            <Texto style={styles.titulo} accessibilityRole="header">
                 Teste de IA
-            </Text>
+            </Texto>
 
             <Pressable
                 style={styles.botao}
                 onPress={executarAnalise}
                 disabled={carregando}
+                accessibilityRole="button"
+                accessibilityLabel={carregando ? "Analisando" : "Analisar"}
+                accessibilityState={{ busy: carregando, disabled: carregando }}
             >
                 {carregando ? (
                     <ActivityIndicator color="#FFFFFF" />
@@ -89,9 +95,9 @@ export default function TesteIA() {
             </Pressable>
 
             {resposta !== "" && (
-                <Text style={styles.resposta}>
+                <Texto style={styles.resposta}>
                     {resposta}
-                </Text>
+                </Texto>
             )}
 
         </View>

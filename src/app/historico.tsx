@@ -5,10 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { cores } from "../theme/colors";
 import { Texto } from "../components/Texto";
+import { useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 export default function Historico() {
 
     const router = useRouter();
+
+    useAnuncioDeTela("Histórico");
 
     return (
         <SafeAreaView style={estilos.container}>
@@ -22,6 +25,8 @@ export default function Historico() {
                     <TouchableOpacity
                         style={estilos.botaoVoltar}
                         onPress={() => router.back()}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voltar"
                     >
                         <Feather
                             name="chevron-left"
@@ -32,18 +37,22 @@ export default function Historico() {
 
                 </View>
 
-                <Texto style={estilos.titulo}>
+                <Texto style={estilos.titulo} accessibilityRole="header">
                     Histórico
                 </Texto>
 
 
-                <Texto style={estilos.subtitulo}>
+                <Texto style={estilos.subtitulo} accessibilityRole="header">
                     Hoje
                 </Texto>
 
                 <View style={estilos.card}>
 
-                    <View style={estilos.item}>
+                    <View
+                        style={estilos.item}
+                        accessible
+                        accessibilityLabel="Leitura de texto. Texto identificado e lido. Às 10:42."
+                    >
 
                         <View style={estilos.icone}>
                             <Feather
@@ -70,7 +79,11 @@ export default function Historico() {
                     </View>
 
 
-                    <View style={[estilos.item, estilos.itemBorda]}>
+                    <View
+                        style={[estilos.item, estilos.itemBorda]}
+                        accessible
+                        accessibilityLabel="Objeto identificado. Pessoa. Às 10:38."
+                    >
 
                         <View style={estilos.icone}>
                             <Feather
@@ -99,13 +112,17 @@ export default function Historico() {
                 </View>
 
 
-                <Texto style={estilos.subtitulo}>
+                <Texto style={estilos.subtitulo} accessibilityRole="header">
                     Ontem
                 </Texto>
 
                 <View style={estilos.card}>
 
-                    <View style={estilos.item}>
+                    <View
+                        style={estilos.item}
+                        accessible
+                        accessibilityLabel="Leitura de texto. Texto identificado e lido. Às 18:21."
+                    >
 
                         <View style={estilos.icone}>
                             <Feather
@@ -132,7 +149,11 @@ export default function Historico() {
                     </View>
 
 
-                    <View style={[estilos.item, estilos.itemBorda]}>
+                    <View
+                        style={[estilos.item, estilos.itemBorda]}
+                        accessible
+                        accessibilityLabel="Obstáculo detectado. Obstáculo próximo. Às 17:54."
+                    >
 
                         <View style={estilos.icone}>
                             <Feather

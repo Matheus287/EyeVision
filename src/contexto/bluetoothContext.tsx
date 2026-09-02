@@ -4,6 +4,7 @@ import { BleManager, Device, Characteristic } from "react-native-ble-plx";
 import { UUIDS, COMANDOS, textoParaBase64, TIPOS_FRAGMENTO, TAMANHO_CABECALHO } from "../servicos/bluetoothProtocol";
 import { toByteArray } from "base64-js";
 import { processarCaptura } from "../servicos/iaService";
+import * as Speech from "expo-speech";
 
 const DURACAO_BUSCA_MS = 10000;
 
@@ -31,6 +32,9 @@ interface BluetoothContextType {
     recebendoAudio: boolean;
 
     tarefaRecebida: TarefaRecebida | null;
+
+    processandoIA: boolean;
+    respostaIA: string | null;
 
     procurarDispositivos: () => Promise<void>;
     conectarDispositivo: (device: Device) => Promise<void>;
@@ -91,6 +95,9 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     useState<TarefaRecebida | null>(null);
 
     const ultimaTarefaProcessadaRef = useRef<number | null>(null);
+
+    const [processandoIA, setProcessandoIA] = useState(false); 
+    const [respostaIA, setRespostaIA] = useState<string | null>(null);
 
     useEffect(() => {
         const manager = managerRef.current;
@@ -159,6 +166,9 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 tarefa.id
             );
 
+            setProcessandoIA(true);
+            setRespostaIA(null);
+
             try {
 
                 const resultado = await processarCaptura(
@@ -175,11 +185,39 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                         resultado.resposta
                     );
 
+                    setRespostaIA(resultado.resposta);
+
+                    await Speech.stop();
+
+                    await Speech.speak(
+                        resultado.resposta,
+                        {
+                            language: "pt-BR",
+                            rate: 0.95,
+                            pitch: 1.0,
+                        }
+                    );
+
                 } else {
 
                     console.log(
                         "Erro na análise:",
                         resultado.erro
+                    );
+
+                    const mensagemErro =
+                        "Não foi possível realizar a análise.";
+
+                    setRespostaIA(mensagemErro);
+
+                    await Speech.stop();
+
+                    await Speech.speak(
+                        mensagemErro,
+                        {
+                            language: "pt-BR",
+                            rate: 0.95,
+                        }
                     );
                 }
 
@@ -189,6 +227,25 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                     "Erro ao processar tarefa:",
                     erro
                 );
+
+                const mensagemErro =
+                    "Ocorreu um erro ao processar a solicitação.";
+
+                setRespostaIA(mensagemErro);
+
+                await Speech.stop();
+
+                await Speech.speak(
+                    mensagemErro,
+                    {
+                        language: "pt-BR",
+                        rate: 0.95,
+                    }
+                );
+
+            } finally {
+
+                setProcessandoIA(false);
             }
         }
 
@@ -834,8 +891,12 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 imagemRecebida,
                 audioRecebido,
                 tarefaRecebida,
+
                 recebendoImagem,
                 recebendoAudio,
+
+                processandoIA,
+                respostaIA,
 
                 procurarDispositivos,
                 conectarDispositivo,

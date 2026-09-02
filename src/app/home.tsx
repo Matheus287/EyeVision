@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Switch } from "../components/Switch";
@@ -7,6 +6,8 @@ import { cores, tamanhos } from "../theme/colors";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Texto } from "../components/Texto"
 import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
+import { useBluetooth } from "../contexto/bluetoothContext"
+import { useAnuncioDeTela, useAnuncioDeMudanca } from "../servicos/useAcessibilidade";
 
 const Oculos = require("../assets/img/Oculos.png");
 
@@ -17,18 +18,30 @@ export default function Home() {
         alterarConfiguracao,
     } = useConfiguracoes();
 
+    const { processandoIA } = useBluetooth();
+
     const router = useRouter();
+
+    useAnuncioDeTela("Tela inicial, EyeVision");
+
+    useAnuncioDeMudanca(processandoIA, (atual) =>
+        atual ? "Processando" : "Processamento concluído"
+    );
 
     return (
         <SafeAreaProvider>
             <View style={estilos.container}>
                 <View style={estilos.cabecalho}>
-                    <Texto style={estilos.logo}>EyeVision</Texto>
+                    <Texto style={estilos.logo} accessibilityRole="header">
+                        EyeVision
+                    </Texto>
 
                     <View style={estilos.icones}>
                         <TouchableOpacity
                             style={estilos.botaoIcone}
                             onPress={() => router.push("/adicionar-dispositivo")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Adicionar dispositivo"
                         >
                             <Feather name="plus" size={24} color={cores.primariaClara} />
                         </TouchableOpacity>
@@ -36,6 +49,8 @@ export default function Home() {
                         <TouchableOpacity
                             style={estilos.botaoIcone}
                             onPress={() => router.push("/configuracoes")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Abrir configurações"
                         >
                             <Feather name="settings" size={24} color={cores.primariaClara} />
                         </TouchableOpacity>
@@ -43,26 +58,70 @@ export default function Home() {
                 </View>
 
                 <View style={estilos.dispositivo}>
-                    <Texto style={estilos.titulo}>Dispositivo 1</Texto>
-                    <Image source={Oculos} style={estilos.img} resizeMode="contain" />
+                    <Texto style={estilos.titulo} accessibilityRole="header">
+                        Dispositivo 1
+                    </Texto>
 
-                    <View style={estilos.card}>
+                    <Image
+                        source={Oculos}
+                        style={estilos.img}
+                        resizeMode="contain"
+                        accessible={false}
+                        importantForAccessibility="no"
+                    />
+
+                    <View
+                        style={estilos.card}
+                        accessible
+                        accessibilityLabel="Bluetooth: conectado. Bateria: 80 por cento."
+                    >
                         <View style={estilos.cardItem}>
-                            <Feather name="bluetooth" size={20} color={cores.primariaClara} />
-                            <Texto style={estilos.cardTexto}>Desconectado</Texto>
+                            <Feather
+                                name="bluetooth"
+                                size={25}
+                                color={cores.primariaClara}
+                            />
+                            <Texto style={estilos.cardTexto}>Conectado</Texto>
                         </View>
 
+                        <View style={estilos.divisoria} />
+
                         <View style={estilos.cardItem}>
-                            <Feather name="battery" size={20} color={cores.primariaClara} />
-                            <Texto style={estilos.cardTexto}>22%</Texto>
+                            <Feather
+                                name="battery"
+                                size={25}
+                                color={cores.primariaClara}
+                            />
+                            <Texto style={estilos.cardTexto}>80%</Texto>
                         </View>
                     </View>
                 </View>
+
+                {processandoIA ? (
+                    <View
+                        style={estilos.processandoContainer}
+                        accessible
+                        accessibilityLiveRegion="polite"
+                        accessibilityLabel="Processando"
+                    >
+                        <ActivityIndicator
+                            size="small"
+                            color={cores.primariaClara}
+                        />
+
+                        <Texto style={estilos.processandoTexto}>
+                            Processando...
+                        </Texto>
+                    </View>
+                ) : (
+                    <View style={estilos.processandoContainerVazio} />
+                )}
 
                 <View style={estilos.opcoes}>
                     <TouchableOpacity
                         style={estilos.submitButton}
                         onPress={() => router.push("/historico")}
+                        accessibilityRole="button"
                     >
                         <Texto style={estilos.submitButtonTexto}>Histórico</Texto>
                     </TouchableOpacity>
@@ -70,6 +129,7 @@ export default function Home() {
                     <TouchableOpacity
                         style={estilos.submitButton}
                         onPress={() => router.push("/teste-ia")}
+                        accessibilityRole="button"
                     >
                         <Texto style={estilos.submitButtonTexto}>Testar IA</Texto>
                     </TouchableOpacity>
@@ -77,6 +137,7 @@ export default function Home() {
                     <View style={estilos.conteinerToggle}>
                         <Texto style={estilos.toggleTexto}>Modo Navegação</Texto>
                         <Switch
+                            rotulo="Modo Navegação"
                             ligado={configuracoes.modoNavegacao}
                             aoAlternar={() =>
                                 alterarConfiguracao(
@@ -90,6 +151,7 @@ export default function Home() {
                     <View style={estilos.conteinerToggle}>
                         <Texto style={estilos.toggleTexto}>Economia de Bateria</Texto>
                         <Switch
+                            rotulo="Economia de Bateria"
                             ligado={configuracoes.economiaBateria}
                             aoAlternar={() =>
                                 alterarConfiguracao(
@@ -147,19 +209,25 @@ const estilos = StyleSheet.create({
     },
     card: {
         flexDirection: "row",
-        justifyContent: "center",
         alignItems: "center",
-        margin: 16,
-        padding: 24,
         backgroundColor: cores.primariaBase,
         borderRadius: 30,
-        gap: 60,
         width: "100%",
+        paddingVertical: 15,
     },
     cardItem: {
+        flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: 10,
+        paddingHorizontal: 24,
     },
+
+    divisoria: {
+        width: 1,
+        height: 38,
+        backgroundColor: cores.divisoria,
+    },
+
     cardTexto: {
         color: cores.primariaClara,
     },
@@ -170,6 +238,7 @@ const estilos = StyleSheet.create({
     submitButton: {
         width: "100%",
         maxWidth: 400,
+        height: 45,
         marginTop: 16,
         paddingVertical: 12,
         backgroundColor: cores.secundariaBase,
@@ -184,6 +253,7 @@ const estilos = StyleSheet.create({
     conteinerToggle: {
         width: "100%",
         maxWidth: 400,
+        height: 45,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -196,5 +266,22 @@ const estilos = StyleSheet.create({
     toggleTexto: {
         color: cores.primariaClara,
         fontSize: tamanhos.base2,
+    },
+    processandoContainer: {
+        height: 50,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+    },
+
+    processandoContainerVazio: {
+        height: 50,
+    },
+
+    processandoTexto: {
+        color: cores.primariaClara,
+        fontSize: 16,
+        fontWeight: "600",
     },
 });

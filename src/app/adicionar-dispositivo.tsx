@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { cores } from "../theme/colors";
 import { Texto } from "../components/Texto";
 import { useBluetooth } from "../contexto/bluetoothContext";
+import { useAnuncioDeTela, useAnuncioDeMudanca } from "../servicos/useAcessibilidade";
 
 export default function AdicionarDispositivo() {
 
@@ -20,9 +21,32 @@ export default function AdicionarDispositivo() {
         desconectarDispositivo,
     } = useBluetooth();
 
+    useAnuncioDeTela("Adicionar dispositivos");
+
     useEffect(() => {
             procurarDispositivos();
     }, []);
+
+    // avisa por voz quando conecta/desconecta, sem precisar olhar pra tela
+    useAnuncioDeMudanca(dispositivoConectado?.id ?? null, (atual, anterior) => {
+        if (atual && atual !== anterior) {
+            return `Conectado a ${dispositivoConectado?.name ?? "dispositivo sem nome"}`;
+        }
+        if (!atual && anterior) {
+            return "Dispositivo desconectado";
+        }
+        return null;
+    });
+
+    // avisa quando a busca termina e quantos dispositivos apareceram
+    useAnuncioDeMudanca(buscando, (atual, anterior) => {
+        if (anterior === true && atual === false) {
+            const total = dispositivosEncontrados.length;
+            if (total === 0) return "Busca concluída. Nenhum dispositivo encontrado.";
+            return `Busca concluída. ${total} dispositivo${total > 1 ? "s" : ""} encontrado${total > 1 ? "s" : ""}.`;
+        }
+        return null;
+    });
 
     const dispositivosDisponiveis = dispositivosEncontrados.filter(
         (device) => device.id !== dispositivoConectado?.id
@@ -35,18 +59,30 @@ export default function AdicionarDispositivo() {
                     <TouchableOpacity
                         style={estilos.botaoVoltar}
                         onPress={() => router.replace("/home")}
+                        accessibilityRole="button"
+                        accessibilityLabel="Voltar para tela inicial"
                     >
                         <Feather name="chevron-left" size={28} color={cores.primariaClara} />
                     </TouchableOpacity>
                 </View>
 
-                <Texto style={estilos.titulo}>Adicionar Dispositivos</Texto>
+                <Texto style={estilos.titulo} accessibilityRole="header">
+                    Adicionar Dispositivos
+                </Texto>
 
-                <Texto style={estilos.subtitulo}>Dispositivo conectado</Texto>
+                <Texto style={estilos.subtitulo} accessibilityRole="header">
+                    Dispositivo conectado
+                </Texto>
 
                 <View style={estilos.card}>
                     {dispositivoConectado ? (
-                        <TouchableOpacity style={estilos.item} onPress={desconectarDispositivo}>
+                        <TouchableOpacity
+                            style={estilos.item}
+                            onPress={desconectarDispositivo}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${dispositivoConectado.name ?? "Dispositivo sem nome"}, conectado`}
+                            accessibilityHint="Toque para desconectar"
+                        >
                             <View>
                                 <Texto style={estilos.itemTexto}>
                                     {dispositivoConectado.name ?? "Dispositivo sem nome"}
@@ -64,12 +100,17 @@ export default function AdicionarDispositivo() {
                 </View>
 
                 <View style={estilos.linhaSubtitulo}>
-                    <Texto style={estilos.subtituloSemMargem}>Dispositivos disponíveis</Texto>
+                    <Texto style={estilos.subtituloSemMargem} accessibilityRole="header">
+                        Dispositivos disponíveis
+                    </Texto>
 
                     <TouchableOpacity
                         onPress={procurarDispositivos}
                         disabled={buscando}
                         hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Buscar dispositivos novamente"
+                        accessibilityState={{ busy: buscando, disabled: buscando }}
                     >
                         {buscando ? (
                             <ActivityIndicator size="small" color={cores.primariaClara} />
@@ -89,28 +130,38 @@ export default function AdicionarDispositivo() {
                             </Texto>
                         </View>
                     ) : (
-                        dispositivosDisponiveis.map((device) => (
-                            <TouchableOpacity
-                                key={device.id}
-                                style={estilos.item}
-                                onPress={() => conectarDispositivo(device)}
-                                disabled={conectandoId !== null}
-                            >
-                                <Texto style={estilos.itemTexto}>
-                                    {device.name ?? "Dispositivo sem nome"}
-                                </Texto>
+                        dispositivosDisponiveis.map((device) => {
+                            const conectandoEste = conectandoId === device.id;
+                            const nome = device.name ?? "Dispositivo sem nome";
 
-                                {conectandoId === device.id ? (
-                                    <ActivityIndicator size="small" color={cores.primariaClara} />
-                                ) : (
-                                    <Feather
-                                        name="chevron-right"
-                                        size={19}
-                                        color={cores.primariaClara}
-                                    />
-                                )}
-                            </TouchableOpacity>
-                        ))
+                            return (
+                                <TouchableOpacity
+                                    key={device.id}
+                                    style={estilos.item}
+                                    onPress={() => conectarDispositivo(device)}
+                                    disabled={conectandoId !== null}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={conectandoEste ? `Conectando a ${nome}` : nome}
+                                    accessibilityHint={conectandoEste ? undefined : "Toque para conectar"}
+                                    accessibilityState={{
+                                        disabled: conectandoId !== null,
+                                        busy: conectandoEste,
+                                    }}
+                                >
+                                    <Texto style={estilos.itemTexto}>{nome}</Texto>
+
+                                    {conectandoEste ? (
+                                        <ActivityIndicator size="small" color={cores.primariaClara} />
+                                    ) : (
+                                        <Feather
+                                            name="chevron-right"
+                                            size={19}
+                                            color={cores.primariaClara}
+                                        />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })
                     )}
                 </View>
 

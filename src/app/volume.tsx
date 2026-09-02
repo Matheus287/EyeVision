@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { cores } from "../theme/colors";
 import { Texto } from "../components/Texto";
 import { useConfiguracoes } from "../contexto/ConfiguracoesContext";
+import { useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 export default function Volume() {
 
@@ -17,6 +18,9 @@ export default function Volume() {
     } = useConfiguracoes();
 
     const volume = configuracoes.volumeFala;
+    const volumePercentual = Math.round(volume * 100);
+
+    useAnuncioDeTela("Volume da reprodução");
 
     function alterarVolume(valor: number) {
 
@@ -46,13 +50,17 @@ export default function Volume() {
                     />
                 </Pressable>
 
-                <Texto style={estilos.titulo}>
+                <Texto style={estilos.titulo} accessibilityRole="header">
                     Volume da reprodução
                 </Texto>
 
                 <View style={estilos.card}>
 
-                    <View style={estilos.indicador}>
+                    <View
+                        style={estilos.indicador}
+                        accessible
+                        accessibilityLabel={`Volume atual: ${volumePercentual} por cento`}
+                    >
 
                         <Feather
                             name={
@@ -67,7 +75,7 @@ export default function Volume() {
                         />
 
                         <Texto style={estilos.valor}>
-                            {Math.round(volume * 100)}%
+                            {volumePercentual}%
                         </Texto>
 
                     </View>
@@ -82,6 +90,15 @@ export default function Volume() {
                         minimumTrackTintColor={cores.terciaria}
                         maximumTrackTintColor="#555"
                         thumbTintColor={cores.terciaria}
+                        accessible
+                        accessibilityRole="adjustable"
+                        accessibilityLabel="Volume da reprodução"
+                        accessibilityValue={{
+                            min: 0,
+                            max: 100,
+                            now: volumePercentual,
+                            text: `${volumePercentual} por cento`,
+                        }}
                     />
 
                     <View style={estilos.rotulos}>

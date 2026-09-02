@@ -4,6 +4,7 @@ import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { cores } from "../theme/colors";
 import { Texto } from "../components/Texto"
+import { useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 const Logo = require("../assets/img/Icone Branco.png");
 const Pietro = require("../assets/img/Pietro.png");
@@ -15,6 +16,8 @@ export default function Sobre() {
 
     const router = useRouter();
 
+    useAnuncioDeTela("Sobre o EyeVision");
+
     return (
         <SafeAreaProvider>
             <ScrollView>
@@ -23,15 +26,25 @@ export default function Sobre() {
                         <TouchableOpacity
                             style={estilos.botaoVoltar}
                             onPress={() => router.push("/configuracoes")}
+                            accessibilityRole="button"
+                            accessibilityLabel="Voltar para configurações"
                         >
                             <Feather name="chevron-left" size={28} color={cores.primariaClara} />
                         </TouchableOpacity>
                     </View>
 
-                    <Texto style={estilos.titulo}>Sobre</Texto>
+                    <Texto style={estilos.titulo} accessibilityRole="header">
+                        Sobre
+                    </Texto>
 
                     <View style={estilos.logoContainer}>
-                        <Image source={Logo} style={estilos.logo} resizeMode="contain" />
+                        <Image
+                            source={Logo}
+                            style={estilos.logo}
+                            resizeMode="contain"
+                            accessible={false}
+                            importantForAccessibility="no"
+                        />
                         <Texto style={estilos.nomeApp}>EyeVision</Texto>
                     </View>
 
@@ -44,7 +57,9 @@ export default function Sobre() {
                         </Texto>
                     </View>
 
-                    <Texto style={estilos.subtitulo}>Objetivo</Texto>
+                    <Texto style={estilos.subtitulo} accessibilityRole="header">
+                        Objetivo
+                    </Texto>
 
                     <View style={estilos.card}>
                         <Texto style={estilos.textoCard}>
@@ -55,7 +70,9 @@ export default function Sobre() {
                         </Texto>
                     </View>
 
-                    <Texto style={estilos.subtitulo}>Tecnologias</Texto>
+                    <Texto style={estilos.subtitulo} accessibilityRole="header">
+                        Tecnologias
+                    </Texto>
 
                     <View style={estilos.card}>
                         {["React Native", "ESP32-S3 Sense", "Bluetooth", "OCR", "Síntese de voz"].map(
@@ -73,7 +90,9 @@ export default function Sobre() {
                         )}
                     </View>
 
-                    <Texto style={estilos.subtitulo}>Equipe</Texto>
+                    <Texto style={estilos.subtitulo} accessibilityRole="header">
+                        Equipe
+                    </Texto>
 
                     <View style={estilos.integrantes}>
 
@@ -81,6 +100,8 @@ export default function Sobre() {
                             <Image
                                 source={Pietro}
                                 style={estilos.fotoIntegrante}
+                                accessible={false}
+                                importantForAccessibility="no"
                             />
 
                             <Texto style={estilos.nomeIntegrante}>
@@ -92,6 +113,8 @@ export default function Sobre() {
                             <Image
                                 source={Nicoli}
                                 style={estilos.fotoIntegrante}
+                                accessible={false}
+                                importantForAccessibility="no"
                             />
 
                             <Texto style={estilos.nomeIntegrante}>
@@ -103,6 +126,8 @@ export default function Sobre() {
                             <Image
                                 source={Matheus}
                                 style={estilos.fotoIntegrante}
+                                accessible={false}
+                                importantForAccessibility="no"
                             />
 
                             <Texto style={estilos.nomeIntegrante}>
@@ -114,6 +139,8 @@ export default function Sobre() {
                             <Image
                                 source={Samara}
                                 style={estilos.fotoIntegrante}
+                                accessible={false}
+                                importantForAccessibility="no"
                             />
 
                             <Texto style={estilos.nomeIntegrante}>

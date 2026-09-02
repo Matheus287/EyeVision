@@ -3,6 +3,7 @@ import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Texto } from "../components/Texto";
 import { cores, tamanhos } from "../theme/colors";
+import { useAnuncioDeTela } from "../servicos/useAcessibilidade";
 
 import { LeitorTexto } from "../components/LeitorTexto";
 
@@ -12,13 +13,15 @@ export default function Inicial() {
 
     const router = useRouter();
 
+    useAnuncioDeTela("Bem-vindo ao EyeVision");
+
     return (
         <SafeAreaView style={estilos.container}>
 
             <View style={estilos.conteudo}>
 
             <View style={estilos.titulo}>
-                <Texto style={estilos.logo}>
+                <Texto style={estilos.logo} accessibilityRole="header">
                     EyeVision
                 </Texto>
 
@@ -32,6 +35,8 @@ export default function Inicial() {
                         source={logo}
                         style={estilos.img}
                         resizeMode="contain"
+                        accessible={false}
+                        importantForAccessibility="no"
                     />
 
                 </View>
@@ -44,6 +49,9 @@ export default function Inicial() {
                         onPress={() =>
                             router.push("/adicionar-dispositivo")
                         }
+                        accessibilityRole="button"
+                        accessibilityLabel="Adicionar Dispositivo"
+                        accessibilityHint="Abre a tela para conectar seu dispositivo EyeVision"
                     >
                         <Texto style={estilos.submitButtonTexto}>
                             Adicionar Dispositivo
