@@ -337,6 +337,7 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 throw new Error("Dispositivo não está conectado.");
             }
 
+            {/*
             const servicos = await conectado.services();
 
             const servicoEyeVision = servicos.find(
@@ -397,9 +398,11 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
             console.log("IMAGEM:", imagem.uuid);
             console.log("AUDIO:", audio.uuid);
             console.log("STATUS:", status.uuid);
+            */}
 
             setDispositivoConectado(conectado);
 
+            {/* 
             iniciarRecebimentoImagem(
                 conectado,
                 imagem
@@ -409,7 +412,7 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 conectado,
                 audio
             );
-
+*/}
             managerRef.current.onDeviceDisconnected(
                 conectado.id,
                 () => {
