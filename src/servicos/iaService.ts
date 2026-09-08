@@ -1,4 +1,3 @@
-import * as Speech from "expo-speech";
 import { analisarConteudo } from "./geminiService";
 
 export interface ResultadoIA {
@@ -44,11 +43,6 @@ export async function processarCaptura(
                 erro: "O Gemini não retornou uma resposta."
             };
         }
-
-        Speech.speak(resposta, {
-            language: "pt-BR",
-            rate: 0.95
-        });
 
         return {
             sucesso: true,

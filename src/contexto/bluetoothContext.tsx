@@ -1,10 +1,13 @@
-import { createContext, ReactNode, useContext, useEffect, useRef,useState } from "react";
-import { PermissionsAndroid, Platform } from "react-native";
-import { BleManager, Device, Characteristic } from "react-native-ble-plx";
-import { UUIDS, COMANDOS, textoParaBase64, TIPOS_FRAGMENTO, TAMANHO_CABECALHO } from "../servicos/bluetoothProtocol";
 import { toByteArray } from "base64-js";
-import { processarCaptura } from "../servicos/iaService";
 import * as Speech from "expo-speech";
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { PermissionsAndroid, Platform } from "react-native";
+import { BleManager, Characteristic, Device } from "react-native-ble-plx";
+import { COMANDOS, TAMANHO_CABECALHO, textoParaBase64, TIPOS_FRAGMENTO, UUIDS } from "../servicos/bluetoothProtocol";
+import { processarCaptura } from "../servicos/iaService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useConfiguracoes } from "./ConfiguracoesContext";
+import { obterCodigoIdioma } from "../servicos/idioma";
 
 const DURACAO_BUSCA_MS = 10000;
 
@@ -30,6 +33,8 @@ interface BluetoothContextType {
 
     recebendoImagem: boolean;
     recebendoAudio: boolean;
+    statusDispositivo: number;
+    textoStatusDispositivo: string;
 
     tarefaRecebida: TarefaRecebida | null;
 
@@ -41,13 +46,54 @@ interface BluetoothContextType {
     desconectarDispositivo: () => Promise<void>;
     capturarImagem: () => Promise<void>;
     analisarCaptura: () => Promise<void>;
+
+    dispositivosSalvos: DispositivoSalvo[];
+
+    salvarDispositivo: (device: Device) => Promise<void>;
+    renomearDispositivo: (id: string, nome: string) => Promise<void>;
+    removerDispositivo: (id: string) => Promise<void>;
+    conectarDispositivoPorId: (id: string) => Promise<void>;
+}
+
+interface DispositivoSalvo {
+    id: string;
+    nome: string;
 }
 
 const BluetoothContext = createContext<BluetoothContextType | null>(null);
 
+function obterTextoStatus(status: number): string {
+
+    switch (status) {
+
+        case 0x00:
+            return "Pronto";
+
+        case 0x01:
+            return "Capturando imagem...";
+
+        case 0x02:
+            return "Gravando áudio...";
+
+        case 0x03:
+            return "Enviando imagem...";
+
+        case 0x04:
+            return "Enviando áudio...";
+
+        case 0x05:
+            return "Erro";
+
+        default:
+            return "Desconhecido";
+    }
+}
+
 export function BluetoothProvider({ children }: { children: ReactNode }) {
 
     const managerRef = useRef(new BleManager());
+
+    const { configuracoes } = useConfiguracoes();
 
     const [dispositivosEncontrados, setDispositivosEncontrados] = useState<Device[]>([]);
     const [buscando, setBuscando] = useState(false);
@@ -78,6 +124,11 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     const [recebendoAudio, setRecebendoAudio] =
         useState(false);
 
+    const [statusDispositivo, setStatusDispositivo] = useState<number>(0x00);
+
+    const textoStatusDispositivo =
+    obterTextoStatus(statusDispositivo);
+
     const imagemBufferRef = useRef<Map<number, Uint8Array>>(new Map());
     const audioBufferRef = useRef<Map<number, Uint8Array>>(new Map());
     const imagemSubscriptionRef = useRef<{
@@ -86,6 +137,20 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
     const imagemTarefaRef = useRef<number | null>(null);
     const audioTarefaRef = useRef<number | null>(null);
+
+    // Guardam a imagem/áudio já reconstruídos enquanto esperam
+    // o par (mesma "tarefa") do outro canal chegar. É isso que
+    // permite associar imagem e áudio pelo ID da tarefa, e não
+    // apenas assumir que o único par existente é sempre o certo.
+    const imagemPendenteRef = useRef<{
+        tarefa: number;
+        base64: string;
+    } | null>(null);
+
+    const audioPendenteRef = useRef<{
+        tarefa: number;
+        base64: string;
+    } | null>(null);
 
     const audioSubscriptionRef = useRef<{
         remove: () => void;
@@ -99,6 +164,15 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     const [processandoIA, setProcessandoIA] = useState(false); 
     const [respostaIA, setRespostaIA] = useState<string | null>(null);
 
+    const [dispositivosSalvos, setDispositivosSalvos] =
+    useState<DispositivoSalvo[]>([]);
+
+    const CHAVE_DISPOSITIVOS = "@eyevision:dispositivos";
+
+    useEffect(() => {
+        carregarDispositivosSalvos();
+    }, []);
+
     useEffect(() => {
         const manager = managerRef.current;
 
@@ -108,40 +182,10 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    useEffect(() => {
-
-        if (!imagemRecebida || !audioRecebido) {
-            return;
-        }
-
-        if (
-            imagemTarefaRef.current === null ||
-            audioTarefaRef.current === null
-        ) {
-            return;
-        }
-
-        if (
-            imagemTarefaRef.current !==
-            audioTarefaRef.current
-        ) {
-            return;
-        }
-
-        const tarefa: TarefaRecebida = {
-            id: imagemTarefaRef.current,
-            imagem: imagemRecebida,
-            audio: audioRecebido
-        };
-
-        setTarefaRecebida(tarefa);
-
-        console.log(
-            "Tarefa completa recebida:",
-            tarefa.id
-        );
-
-    }, [imagemRecebida, audioRecebido]);
+    // A montagem da tarefa (associando imagem + áudio pela mesma
+    // "tarefa") agora acontece em tentarAssociarTarefa(), chamada
+    // diretamente pelos handlers de recebimento de imagem e áudio
+    // assim que cada um termina de reconstruir seus fragmentos.
 
     useEffect(() => {
 
@@ -175,7 +219,7 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                     tarefa.imagem,
                     tarefa.audio,
                     "image/jpeg",
-                    "audio/mpeg"
+                    "audio/wav"
                 );
 
                 if (resultado.sucesso) {
@@ -192,8 +236,11 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                     await Speech.speak(
                         resultado.resposta,
                         {
-                            language: "pt-BR",
-                            rate: 0.95,
+                            language: obterCodigoIdioma(
+                                configuracoes.idiomaLeitura
+                            ),
+                            rate: configuracoes.velocidadeFala,
+                            volume: configuracoes.volumeFala,
                             pitch: 1.0,
                         }
                     );
@@ -296,7 +343,7 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            if (device) {
+            if (device && device.name) {
                 setDispositivosEncontrados((anteriores) => {
                     if (anteriores.some((d) => d.id === device.id)) {
                         return anteriores;
@@ -313,7 +360,7 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         }, DURACAO_BUSCA_MS);
     }
 
-    async function conectarDispositivo(device: Device) {
+    async function conectarDispositivo(device: Device, jaConectado = false) {
         try {
             setConectandoId(device.id);
 
@@ -327,7 +374,29 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
             console.log("Conectando em:", device.name);
 
-            const conectado = await device.connect();
+            let conectado = jaConectado
+                ? device
+                : await device.connect();
+
+            // Negocia um MTU maior para caber os fragmentos de
+            // 187 bytes (7 de cabeçalho + 180 de payload) que o
+            // firmware envia. Sem isso, o MTU padrão do BLE (23
+            // bytes) trunca as notificações. No iOS essa chamada
+            // é inofensiva: o sistema já negocia o MTU sozinho e
+            // requestMTU() simplesmente não faz nada.
+            try {
+                conectado = await conectado.requestMTU(247);
+
+                console.log(
+                    "MTU negociado:",
+                    conectado.mtu
+                );
+            } catch (erro) {
+                console.log(
+                    "Não foi possível negociar MTU maior, seguindo com o padrão:",
+                    erro
+                );
+            }
 
             await conectado.discoverAllServicesAndCharacteristics();
 
@@ -337,7 +406,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 throw new Error("Dispositivo não está conectado.");
             }
 
-            {/*
             const servicos = await conectado.services();
 
             const servicoEyeVision = servicos.find(
@@ -398,11 +466,10 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
             console.log("IMAGEM:", imagem.uuid);
             console.log("AUDIO:", audio.uuid);
             console.log("STATUS:", status.uuid);
-            */}
 
             setDispositivoConectado(conectado);
+            await salvarDispositivo(conectado);
 
-            {/* 
             iniciarRecebimentoImagem(
                 conectado,
                 imagem
@@ -412,7 +479,12 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 conectado,
                 audio
             );
-*/}
+
+            iniciarRecebimentoStatus(
+                conectado,
+                status
+            );
+
             managerRef.current.onDeviceDisconnected(
                 conectado.id,
                 () => {
@@ -434,11 +506,17 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                             imagemBufferRef.current.clear();
                             audioBufferRef.current.clear();
 
+                            imagemTarefaRef.current = null;
+                            audioTarefaRef.current = null;
+                            imagemPendenteRef.current = null;
+                            audioPendenteRef.current = null;
+
                             setImagemRecebida(null);
                             setAudioRecebido(null);
                             setRecebendoImagem(false);
                             setRecebendoAudio(false);
                             setTarefaRecebida(null);
+                            setStatusDispositivo(0x00);
 
                             return null;
                         }
@@ -513,9 +591,15 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
             setImagemRecebida(null);
             setAudioRecebido(null);
             setTarefaRecebida(null);
+            setStatusDispositivo(0x00);
 
             imagemBufferRef.current.clear();
             audioBufferRef.current.clear();
+
+            imagemTarefaRef.current = null;
+            audioTarefaRef.current = null;
+            imagemPendenteRef.current = null;
+            audioPendenteRef.current = null;
 
             console.log(
                 "Dispositivo desconectado com sucesso."
@@ -529,6 +613,152 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         }
     }
 
+    async function carregarDispositivosSalvos() {
+        try {
+            const dados = await AsyncStorage.getItem(CHAVE_DISPOSITIVOS);
+
+            if (dados) {
+                setDispositivosSalvos(JSON.parse(dados));
+            }
+        } catch (erro) {
+            console.error(
+                "Erro ao carregar dispositivos:",
+                erro
+            );
+        }
+    }
+
+    async function salvarDispositivo(device: Device) {
+        try {
+            const dispositivosAtuais =
+                await AsyncStorage.getItem(CHAVE_DISPOSITIVOS);
+
+            const lista: DispositivoSalvo[] =
+                dispositivosAtuais
+                    ? JSON.parse(dispositivosAtuais)
+                    : [];
+
+            const jaExiste = lista.some(
+                (dispositivo) => dispositivo.id === device.id
+            );
+
+            if (jaExiste) {
+                return;
+            }
+
+            const novoDispositivo: DispositivoSalvo = {
+                id: device.id,
+                nome: device.name || "EyeVision",
+            };
+
+            const novaLista = [
+                ...lista,
+                novoDispositivo,
+            ];
+
+            await AsyncStorage.setItem(
+                CHAVE_DISPOSITIVOS,
+                JSON.stringify(novaLista)
+            );
+
+            setDispositivosSalvos(novaLista);
+
+        } catch (erro) {
+            console.error(
+                "Erro ao salvar dispositivo:",
+                erro
+            );
+        }
+    }
+
+    async function renomearDispositivo(
+        id: string,
+        nome: string
+    ) {
+        try {
+            const nomeLimpo = nome.trim();
+
+            if (!nomeLimpo) {
+                return;
+            }
+
+            const novaLista = dispositivosSalvos.map(
+                (dispositivo) =>
+                    dispositivo.id === id
+                        ? {
+                            ...dispositivo,
+                            nome: nomeLimpo,
+                        }
+                        : dispositivo
+            );
+
+            setDispositivosSalvos(novaLista);
+
+            await AsyncStorage.setItem(
+                CHAVE_DISPOSITIVOS,
+                JSON.stringify(novaLista)
+            );
+
+        } catch (erro) {
+            console.error(
+                "Erro ao renomear dispositivo:",
+                erro
+            );
+        }
+    }
+
+    async function removerDispositivo(id: string) {
+        try {
+
+            if (dispositivoConectado?.id === id) {
+                await desconectarDispositivo();
+            }
+
+            const novaLista = dispositivosSalvos.filter(
+                (dispositivo) => dispositivo.id !== id
+            );
+
+            setDispositivosSalvos(novaLista);
+
+            await AsyncStorage.setItem(
+                CHAVE_DISPOSITIVOS,
+                JSON.stringify(novaLista)
+            );
+
+        } catch (erro) {
+            console.error(
+                "Erro ao remover dispositivo:",
+                erro
+            );
+        }
+    }
+
+    async function conectarDispositivoPorId(id: string) {
+        try {
+            setConectandoId(id);
+
+            managerRef.current.stopDeviceScan();
+            setBuscando(false);
+
+            console.log(
+                "Conectando ao dispositivo salvo:",
+                id
+            );
+
+            const device =
+                await managerRef.current.connectToDevice(id);
+
+            await conectarDispositivo(device, true);
+
+        } catch (erro) {
+            console.log(
+                "ERRO AO CONECTAR DISPOSITIVO SALVO:",
+                erro
+            );
+        } finally {
+            setConectandoId(null);
+        }
+    }
     async function enviarComando(comando: string) {
         if (!dispositivoConectado) {
             console.log("Nenhum dispositivo conectado.");
@@ -551,6 +781,45 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         } catch (erro) {
             console.log("ERRO AO ENVIAR COMANDO:", erro);
         }
+    }
+
+    function tentarAssociarTarefa() {
+
+        const img = imagemPendenteRef.current;
+        const aud = audioPendenteRef.current;
+
+        if (!img || !aud) {
+            return;
+        }
+
+        if (img.tarefa !== aud.tarefa) {
+            // Não deveria acontecer no fluxo atual (o ESP32
+            // processa uma tarefa por vez, em ordem), mas por
+            // segurança não associamos imagem e áudio de
+            // tarefas diferentes.
+            console.log(
+                "Imagem e áudio pendentes pertencem a tarefas diferentes:",
+                img.tarefa,
+                aud.tarefa
+            );
+            return;
+        }
+
+        const tarefa: TarefaRecebida = {
+            id: img.tarefa,
+            imagem: img.base64,
+            audio: aud.base64
+        };
+
+        imagemPendenteRef.current = null;
+        audioPendenteRef.current = null;
+
+        console.log(
+            "Imagem e áudio associados na tarefa:",
+            tarefa.id
+        );
+
+        setTarefaRecebida(tarefa);
     }
 
     function reconstruirDados(
@@ -614,6 +883,8 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     ) {
         setRecebendoImagem(true);
         imagemBufferRef.current.clear();
+        imagemTarefaRef.current = null;
+        imagemPendenteRef.current = null;
 
         console.log("Monitorando IMAGEM...");
 
@@ -704,11 +975,24 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                         setImagemRecebida(base64);
                         setRecebendoImagem(false);
 
+                        imagemPendenteRef.current = {
+                            tarefa: imagemTarefaRef.current!,
+                            base64
+                        };
+
                         imagemBufferRef.current.clear();
+
+                        // Libera o canal de imagem para aceitar a
+                        // próxima tarefa (antes, essa referência nunca
+                        // era resetada e a segunda captura em diante
+                        // era descartada como "de outra tarefa").
+                        imagemTarefaRef.current = null;
 
                         console.log(
                             "Imagem recebida e reconstruída!"
                         );
+
+                        tentarAssociarTarefa();
                     }
 
                 } catch (erro) {
@@ -729,6 +1013,8 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     ) {
         setRecebendoAudio(true);
         audioBufferRef.current.clear();
+        audioTarefaRef.current = null;
+        audioPendenteRef.current = null;
 
         console.log("Monitorando AUDIO...");
 
@@ -822,11 +1108,23 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                         setAudioRecebido(base64);
                         setRecebendoAudio(false);
 
+                        audioPendenteRef.current = {
+                            tarefa: audioTarefaRef.current!,
+                            base64
+                        };
+
                         audioBufferRef.current.clear();
+
+                        // Libera o canal de áudio para aceitar a
+                        // próxima tarefa, pelo mesmo motivo do
+                        // canal de imagem acima.
+                        audioTarefaRef.current = null;
 
                         console.log(
                             "Áudio recebido e reconstruído!"
                         );
+
+                        tentarAssociarTarefa();
                     }
 
                 } catch (erro) {
@@ -836,6 +1134,57 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                     );
 
                     setRecebendoAudio(false);
+                }
+            }
+        );
+    }
+
+    function iniciarRecebimentoStatus(
+        device: Device,
+        characteristic: Characteristic
+    ) {
+        console.log("Monitorando STATUS...");
+
+        device.monitorCharacteristicForService(
+            UUIDS.SERVICO_EYEVISION,
+            characteristic.uuid,
+            (erro, characteristicAtualizada) => {
+
+                if (erro) {
+                    console.log(
+                        "ERRO AO RECEBER STATUS:",
+                        erro
+                    );
+                    return;
+                }
+
+                if (!characteristicAtualizada?.value) {
+                    return;
+                }
+
+                try {
+                    const bytes = toByteArray(
+                        characteristicAtualizada.value
+                    );
+
+                    if (bytes.length < 1) {
+                        return;
+                    }
+
+                    const status = bytes[0];
+
+                    setStatusDispositivo(status);
+
+                    console.log(
+                        "Status do dispositivo:",
+                        status
+                    );
+
+                } catch (erro) {
+                    console.log(
+                        "ERRO AO PROCESSAR STATUS:",
+                        erro
+                    );
                 }
             }
         );
@@ -855,26 +1204,89 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
             tarefaRecebida.id
         );
 
-        const resultado = await processarCaptura(
-            tarefaRecebida.imagem,
-            tarefaRecebida.audio,
-            "image/jpeg",
-            "audio/mpeg"
-        );
+        setProcessandoIA(true);
+        setRespostaIA(null);
 
-        if (resultado.sucesso) {
+        try {
 
-            console.log(
-                "Resposta do Gemini:",
-                resultado.resposta
+            const resultado = await processarCaptura(
+                tarefaRecebida.imagem,
+                tarefaRecebida.audio,
+                "image/jpeg",
+                "audio/wav"
             );
 
-        } else {
+            if (resultado.sucesso) {
 
-            console.log(
-                "Erro na análise:",
-                resultado.erro
+                console.log(
+                    "Resposta do Gemini:",
+                    resultado.resposta
+                );
+
+                setRespostaIA(resultado.resposta);
+
+                await Speech.stop();
+
+                await Speech.speak(
+                    resultado.resposta,
+                    {
+                        language: obterCodigoIdioma(
+                            configuracoes.idiomaLeitura
+                        ),
+                        rate: configuracoes.velocidadeFala,
+                        volume: configuracoes.volumeFala,
+                        pitch: 1.0,
+                    }
+                );
+
+            } else {
+
+                console.log(
+                    "Erro na análise:",
+                    resultado.erro
+                );
+
+                const mensagemErro =
+                    "Não foi possível realizar a análise.";
+
+                setRespostaIA(mensagemErro);
+
+                await Speech.stop();
+
+                await Speech.speak(
+                    mensagemErro,
+                    {
+                        language: "pt-BR",
+                        rate: 0.95,
+                    }
+                );
+            }
+
+        } catch (erro) {
+
+            console.error(
+                "Erro ao analisar captura:",
+                erro
             );
+
+            const mensagemErro =
+                "Ocorreu um erro ao processar a solicitação.";
+
+            setRespostaIA(mensagemErro);
+
+            await Speech.stop();
+
+            await Speech.speak(
+                mensagemErro,
+                {
+                    language: "pt-BR",
+                    rate: 0.95,
+                }
+            );
+
+        } finally {
+
+            setProcessandoIA(false);
         }
     }
 
@@ -882,6 +1294,8 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         <BluetoothContext.Provider
             value={{
                 dispositivosEncontrados,
+                dispositivosSalvos,
+
                 buscando,
                 dispositivoConectado,
                 conectandoId,
@@ -894,6 +1308,8 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 imagemRecebida,
                 audioRecebido,
                 tarefaRecebida,
+                statusDispositivo,
+                textoStatusDispositivo: obterTextoStatus(statusDispositivo),
 
                 recebendoImagem,
                 recebendoAudio,
@@ -903,7 +1319,13 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
                 procurarDispositivos,
                 conectarDispositivo,
+                conectarDispositivoPorId,
                 desconectarDispositivo,
+
+                salvarDispositivo,
+                renomearDispositivo,
+                removerDispositivo,
+
                 capturarImagem,
                 analisarCaptura,
             }}

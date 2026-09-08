@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, StyleSheet, Alert, Image } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, Alert, Image, ScrollView } from "react-native";
 import { falarResposta } from "../servicos/tts";
 import { analisarConteudo } from "../servicos/geminiService";
 import { arquivoParaBase64 } from "../servicos/arquivoParaBase64";
@@ -72,6 +72,7 @@ export default function TesteIA() {
 
     return (
         <View style={styles.container}>
+        <ScrollView>
 
             <Texto style={styles.titulo} accessibilityRole="header">
                 Teste de IA
@@ -99,7 +100,7 @@ export default function TesteIA() {
                     {resposta}
                 </Texto>
             )}
-
+        </ScrollView>
         </View>
     );
 }

@@ -98,22 +98,22 @@ export default function Configuracoes() {
                             />
                         </View>
 
-                        <TouchableOpacity
-                            style={estilos.itemBotao}
-                            accessibilityRole="button"
-                            accessibilityLabel="Renomear"
-                        >
-                            <Texto style={estilos.itemTexto}>Renomear</Texto>
-                            <Feather name="chevron-right" size={20} color={cores.primariaClara} />
-                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[estilos.itemBotao, estilos.semBorda]}
+                            onPress={() => router.push("/gerenciar-dispositivos")}
                             accessibilityRole="button"
-                            accessibilityLabel="Gerenciar Dispositivos"
+                            accessibilityLabel="Gerenciar dispositivos"
                         >
-                            <Texto style={estilos.itemTexto}>Gerenciar Dispositivos</Texto>
-                            <Feather name="chevron-right" size={20} color={cores.primariaClara} />
+                            <Texto style={estilos.itemTexto}>
+                                Gerenciar Dispositivos
+                            </Texto>
+
+                            <Feather
+                                name="chevron-right"
+                                size={20}
+                                color={cores.primariaClara}
+                            />
                         </TouchableOpacity>
                     </View>
 

@@ -18,15 +18,34 @@ export default function Home() {
         alterarConfiguracao,
     } = useConfiguracoes();
 
-    const { processandoIA } = useBluetooth();
+    const {
+        processandoIA,
+        textoStatusDispositivo,
+        dispositivoConectado
+    } = useBluetooth();
+
+    const textoStatus = processandoIA
+        ? "Processando IA..."
+        : textoStatusDispositivo;
+
+    const nomeDispositivo =
+    dispositivoConectado?.name || "EyeVision";
+
+    const bluetoothConectado =
+        dispositivoConectado !== null;
+
+    const textoBluetooth =
+        bluetoothConectado ? "Conectado" : "Desconectado";
 
     const router = useRouter();
 
     useAnuncioDeTela("Tela inicial, EyeVision");
 
-    useAnuncioDeMudanca(processandoIA, (atual) =>
-        atual ? "Processando" : "Processamento concluído"
+    useAnuncioDeMudanca(
+        textoStatus,
+        (status) => status
     );
+    
 
     return (
         <SafeAreaProvider>
@@ -58,8 +77,11 @@ export default function Home() {
                 </View>
 
                 <View style={estilos.dispositivo}>
-                    <Texto style={estilos.titulo} accessibilityRole="header">
-                        Dispositivo 1
+                    <Texto
+                        style={estilos.titulo}
+                        accessibilityRole="header"
+                    >
+                        {nomeDispositivo}
                     </Texto>
 
                     <Image
@@ -73,7 +95,7 @@ export default function Home() {
                     <View
                         style={estilos.card}
                         accessible
-                        accessibilityLabel="Bluetooth: conectado. Bateria: 80 por cento."
+                        accessibilityLabel={`Bluetooth: ${textoBluetooth}. Bateria: informação indisponível.`}
                     >
                         <View style={estilos.cardItem}>
                             <Feather
@@ -81,7 +103,10 @@ export default function Home() {
                                 size={25}
                                 color={cores.primariaClara}
                             />
-                            <Texto style={estilos.cardTexto}>Conectado</Texto>
+
+                            <Texto style={estilos.cardTexto}>
+                                {textoBluetooth}
+                            </Texto>
                         </View>
 
                         <View style={estilos.divisoria} />
@@ -92,30 +117,31 @@ export default function Home() {
                                 size={25}
                                 color={cores.primariaClara}
                             />
-                            <Texto style={estilos.cardTexto}>80%</Texto>
+
+                            <Texto style={estilos.cardTexto}>
+                                --%
+                            </Texto>
                         </View>
                     </View>
                 </View>
 
-                {processandoIA ? (
-                    <View
-                        style={estilos.processandoContainer}
-                        accessible
-                        accessibilityLiveRegion="polite"
-                        accessibilityLabel="Processando"
-                    >
+                <View
+                    style={estilos.statusContainer}
+                    accessible={true}
+                    accessibilityRole="text"
+                    accessibilityLabel={`Status do dispositivo: ${textoStatus}`}
+                >
+                    {textoStatus !== "Pronto" && (
                         <ActivityIndicator
                             size="small"
                             color={cores.primariaClara}
                         />
+                    )}
 
-                        <Texto style={estilos.processandoTexto}>
-                            Processando...
-                        </Texto>
-                    </View>
-                ) : (
-                    <View style={estilos.processandoContainerVazio} />
-                )}
+                    <Texto style={estilos.statusTexto}>
+                        {textoStatus}
+                    </Texto>
+                </View>
 
                 <View style={estilos.opcoes}>
                     <TouchableOpacity
@@ -124,14 +150,6 @@ export default function Home() {
                         accessibilityRole="button"
                     >
                         <Texto style={estilos.submitButtonTexto}>Histórico</Texto>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={estilos.submitButton}
-                        onPress={() => router.push("/teste-ia")}
-                        accessibilityRole="button"
-                    >
-                        <Texto style={estilos.submitButtonTexto}>Testar IA</Texto>
                     </TouchableOpacity>
 
                     <View style={estilos.conteinerToggle}>
@@ -221,13 +239,11 @@ const estilos = StyleSheet.create({
         gap: 10,
         paddingHorizontal: 24,
     },
-
     divisoria: {
         width: 1,
         height: 38,
         backgroundColor: cores.divisoria,
     },
-
     cardTexto: {
         color: cores.primariaClara,
     },
@@ -267,21 +283,15 @@ const estilos = StyleSheet.create({
         color: cores.primariaClara,
         fontSize: tamanhos.base2,
     },
-    processandoContainer: {
-        height: 50,
+    statusContainer: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
+        marginVertical: 16,
     },
-
-    processandoContainerVazio: {
-        height: 50,
-    },
-
-    processandoTexto: {
+    statusTexto: {
         color: cores.primariaClara,
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: tamanhos.base2,
     },
 });
