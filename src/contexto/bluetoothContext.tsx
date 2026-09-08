@@ -138,10 +138,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
     const imagemTarefaRef = useRef<number | null>(null);
     const audioTarefaRef = useRef<number | null>(null);
 
-    // Guardam a imagem/áudio já reconstruídos enquanto esperam
-    // o par (mesma "tarefa") do outro canal chegar. É isso que
-    // permite associar imagem e áudio pelo ID da tarefa, e não
-    // apenas assumir que o único par existente é sempre o certo.
     const imagemPendenteRef = useRef<{
         tarefa: number;
         base64: string;
@@ -181,11 +177,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
             manager.destroy();
         };
     }, []);
-
-    // A montagem da tarefa (associando imagem + áudio pela mesma
-    // "tarefa") agora acontece em tentarAssociarTarefa(), chamada
-    // diretamente pelos handlers de recebimento de imagem e áudio
-    // assim que cada um termina de reconstruir seus fragmentos.
 
     useEffect(() => {
 
@@ -378,12 +369,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
                 ? device
                 : await device.connect();
 
-            // Negocia um MTU maior para caber os fragmentos de
-            // 187 bytes (7 de cabeçalho + 180 de payload) que o
-            // firmware envia. Sem isso, o MTU padrão do BLE (23
-            // bytes) trunca as notificações. No iOS essa chamada
-            // é inofensiva: o sistema já negocia o MTU sozinho e
-            // requestMTU() simplesmente não faz nada.
             try {
                 conectado = await conectado.requestMTU(247);
 
@@ -793,10 +778,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
         }
 
         if (img.tarefa !== aud.tarefa) {
-            // Não deveria acontecer no fluxo atual (o ESP32
-            // processa uma tarefa por vez, em ordem), mas por
-            // segurança não associamos imagem e áudio de
-            // tarefas diferentes.
             console.log(
                 "Imagem e áudio pendentes pertencem a tarefas diferentes:",
                 img.tarefa,
@@ -982,10 +963,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
                         imagemBufferRef.current.clear();
 
-                        // Libera o canal de imagem para aceitar a
-                        // próxima tarefa (antes, essa referência nunca
-                        // era resetada e a segunda captura em diante
-                        // era descartada como "de outra tarefa").
                         imagemTarefaRef.current = null;
 
                         console.log(
@@ -1115,9 +1092,6 @@ export function BluetoothProvider({ children }: { children: ReactNode }) {
 
                         audioBufferRef.current.clear();
 
-                        // Libera o canal de áudio para aceitar a
-                        // próxima tarefa, pelo mesmo motivo do
-                        // canal de imagem acima.
                         audioTarefaRef.current = null;
 
                         console.log(
