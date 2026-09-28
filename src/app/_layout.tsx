@@ -27,8 +27,8 @@ export default function Layout() {
     }
 
     return (
-        <BluetoothProvider>
         <ConfiguracoesProvider>
+        <BluetoothProvider>
         <Stack
             screenOptions={{
                 headerShown: false,
@@ -37,7 +37,7 @@ export default function Layout() {
                 },
             }}
         />
-        </ConfiguracoesProvider>
         </BluetoothProvider>
+        </ConfiguracoesProvider>
     );
 }

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "eyevision0.2",
-    "slug": "eyevision0.2",
+    "slug": "eyevision02",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.eyevision0.x2"
+      "package": "com.anonymous.eyevision0.x2",
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ]
     },
     "web": {
       "output": "static",
@@ -40,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5d410b28-37e4-4102-ae1d-a86189fa7ef1"
+      }
     }
   }
 }
