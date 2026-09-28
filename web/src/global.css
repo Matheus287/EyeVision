@@ -1,0 +1,100 @@
+:root {
+  --cor-primaria-escura: #08090a;
+  --cor-primaria-clara: #3a6ea5;
+  --cor-secundaria-clara: #169873;
+  --cor-secundaria-base: #004e98;
+  --cor-terciaria-base: #eef1ef;
+  --cor-branca: #ffffff;
+  --cor-erro: #b3261e;
+  --cor-borda: #cfd6d2;
+
+  --fonte-base: "Nunito", sans-serif;
+  --peso-leve: 300;
+  --peso-normal: 400;
+  --peso-forte: 700;
+
+  --tamanho-base1: 1.6rem;
+  --tamanho-base2: 2rem;
+  --tamanho-titulo: 3.2rem;
+  --tamanho-destaque: 4.8rem;
+  --tamanho-pequeno: 1.4rem;
+
+  --espaco-1: 0.8rem;
+  --espaco-2: 1.6rem;
+  --espaco-3: 2.4rem;
+  --espaco-4: 4rem;
+  --espaco-5: 8rem;
+  --raio: 0.8rem;
+  --largura-max: 112rem;
+}
+
+html {
+  font-size: 62.5%;
+  scroll-behavior: smooth;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--fonte-base);
+  font-weight: var(--peso-leve);
+  font-size: var(--tamanho-base1);
+  line-height: 1.6;
+  color: var(--cor-primaria-escura);
+  background-color: var(--cor-terciaria-base);
+}
+
+h1, h2, h3 {
+  font-weight: var(--peso-forte);
+  line-height: 1.2;
+}
+
+h1 { font-size: var(--tamanho-titulo); }
+h2 { font-size: var(--tamanho-base2); }
+h3 { font-size: var(--tamanho-base1); }
+
+p { font-size: var(--tamanho-base1); }
+
+a { color: var(--cor-secundaria-base); }
+
+ul { list-style: none; }
+
+:focus-visible {
+  outline: 0.3rem solid var(--cor-primaria-clara);
+  outline-offset: 0.2rem;
+}
+
+.conteiner {
+  width: min(100% - 3.2rem, var(--largura-max));
+  margin-inline: auto;
+}
+
+.botao {
+  display: inline-block;
+  padding: 1.2rem 2.4rem;
+  font-family: inherit;
+  font-size: var(--tamanho-base1);
+  font-weight: var(--peso-forte);
+  text-decoration: none;
+  text-align: center;
+  color: var(--cor-branca);
+  background-color: var(--cor-secundaria-base);
+  border: 0.2rem solid var(--cor-secundaria-base);
+  border-radius: var(--raio);
+  cursor: pointer;
+}
+
+.botao:hover { background-color: var(--cor-primaria-clara); border-color: var(--cor-primaria-clara); }
+.botao:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.botaoContorno {
+  color: var(--cor-secundaria-base);
+  background-color: transparent;
+}
+
+.botaoContorno:hover { color: var(--cor-branca); }

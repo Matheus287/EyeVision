@@ -1,0 +1,6 @@
+.rodape {
+  padding-block: var(--espaco-3);
+  color: var(--cor-branca);
+  background-color: var(--cor-primaria-escura);
+}
+.rodape p { font-size: var(--tamanho-pequeno); }

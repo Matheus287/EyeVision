@@ -1,0 +1,44 @@
+.cabecalho {
+  background-color: var(--cor-primaria-escura);
+  color: var(--cor-branca);
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  padding-block: var(--espaco-2);
+}
+
+.logo {
+  font-size: var(--tamanho-base2);
+  font-weight: var(--peso-forte);
+  color: var(--cor-branca);
+  text-decoration: none;
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
+.menu a:not(:global(.botao)) {
+  color: var(--cor-branca);
+  text-decoration: none;
+}
+
+.menu a:not(:global(.botao)):hover,
+.menu a:global(.active) {
+  text-decoration: underline;
+  text-underline-offset: 0.5rem;
+}
+
+.botaoMenu {
+  padding: 0.8rem 2rem;
+  background-color: var(--cor-secundaria-clara);
+  border-color: var(--cor-secundaria-clara);
+}
